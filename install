@@ -1,0 +1,35 @@
+#!/bin/sh
+# Minimal OpenCode CLI installer used by the desktop "Install CLI…" action.
+# The desktop streams this script to bash and passes the bundled binary:
+#   bash -s -- --binary /path/to/opencode-cli
+set -eu
+
+binary=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --binary)
+      binary="${2:-}"
+      shift 2
+      ;;
+    *)
+      shift
+      ;;
+  esac
+done
+
+if [ -z "$binary" ] || [ ! -f "$binary" ]; then
+  echo "install: --binary must point at an existing executable" >&2
+  exit 1
+fi
+
+target="$HOME/.opencode/bin"
+mkdir -p "$target"
+cp "$binary" "$target/opencode"
+chmod 755 "$target/opencode"
+
+"$target/opencode" --version >/dev/null
+
+case ":$PATH:" in
+  *":$target:"*) ;;
+  *) echo "Installed to $target/opencode. Add $target to PATH to run it from a shell." ;;
+esac
