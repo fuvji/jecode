@@ -237,6 +237,7 @@ export const OlliecodeResetLayer = HttpRouter.use((router) =>
         // else in the fresh ritual (fingerprint rotate, WARP rotate, credential
         // wipe, sidecar exit) runs identically both ways.
         const preserveSessions = url.searchParams.get("preserve") === "1"
+        void preserveSessions
 
         // Server-authoritative gate for EVERY reset path, including the
         // default counter wipe. A cached license is not enough: the Worker
@@ -867,7 +868,7 @@ type WarpOutcome =
   | { status: "skipped"; reason: string }
   | { status: "failed"; step: string; error: string; ip_before?: string | null }
 
-function rotateWarp(): Effect.Effect<WarpOutcome & { warp_cycle?: WarpCycleOutcome }> {
+export function rotateWarp(): Effect.Effect<WarpOutcome & { warp_cycle?: WarpCycleOutcome }> {
   return Effect.promise(async (): Promise<WarpOutcome & { warp_cycle?: WarpCycleOutcome }> => {
     // Run Tor rotation and WARP rotation IN PARALLEL. Each shifts a
     // different layer of identity:
@@ -1064,7 +1065,7 @@ async function doWarpCycle(): Promise<WarpCycleOutcome> {
 // Row shape for dynamic snapshot/reinsert of session state. The inline
 // preserve inside the handler above pulls rows with SELECT * and hands
 // them back column-named.
-type Row = Record<string, unknown>
+export type Row = Record<string, unknown>
 
 // Generate a fresh ID matching opencode's own Identifier format:
 // prefix + 12 hex (timestamp) + 14 base62. Vendor schema validators check
@@ -1077,7 +1078,7 @@ type Row = Record<string, unknown>
 const _ID_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 let _idCounter = 0
 let _idLastTs = 0
-function mintId(oldId: string, fallbackPrefix: string): string {
+export function mintId(oldId: string, fallbackPrefix: string): string {
   const m = /^([a-z]{2,8}_)/.exec(oldId)
   const prefix = m ? m[1] : fallbackPrefix
   // 12-hex timestamp with monotonic counter so rapid mints don't collide.
