@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>jecode — a coding agent for your repo</title>
+    <meta
+      name="description"
+      content="jecode is an open-source coding agent for the terminal and desktop. It reads your project, edits files, runs commands, and shows its work."
+    />
+    <link rel="canonical" href="https://fuvji.github.io/jecode/" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="masthead">
+      <a class="brand" href="./" aria-label="jecode home">jecode</a>
+      <nav aria-label="Primary">
+        <a href="#how">How it works</a>
+        <a href="#run">Run it</a>
+        <a class="nav-github" href="https://github.com/fuvji/jecode">GitHub <span aria-hidden="true">↗</span></a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="kicker">Open source coding agent</p>
+          <h1 id="hero-title"><span>je</span><span class="accent">code</span></h1>
+          <p class="lede">
+            It reads the project you already have, changes the files that need changing, runs the
+            checks, and tells you what it did. In your terminal or on your desktop.
+          </p>
+          <div class="actions">
+            <a class="button" href="https://github.com/fuvji/jecode">Get the source</a>
+            <a class="text-link" href="#run">Build it locally</a>
+          </div>
+        </div>
+
+        <div class="terminal" aria-label="Example jecode session">
+          <div class="terminal-bar">
+            <span class="dot" aria-hidden="true"></span>
+            <span class="dot" aria-hidden="true"></span>
+            <span class="terminal-title">~/work/ledger</span>
+          </div>
+          <pre class="terminal-body"><span class="line prompt">$ jecode</span><span class="line">› add a health check to the api</span><span class="line dim">reading 14 files…</span><span class="line ok">✓ edited server/health.ts</span><span class="line ok">✓ edited server/index.ts</span><span class="line run">$ bun test</span><span class="line">42 pass · 0 fail · 1.8s</span><span class="line done">done. want me to write the route test too?<span class="caret" aria-hidden="true"></span></span></pre>
+        </div>
+      </section>
+
+      <section class="strip" aria-label="What jecode does">
+        <p>read the repo</p>
+        <p>edit the files</p>
+        <p>run the command</p>
+        <p>show the diff</p>
+      </section>
+
+      <section class="how" id="how" aria-labelledby="how-title">
+        <div class="section-head">
+          <h2 id="how-title">A working partner, not a chat window.</h2>
+          <p>
+            jecode keeps a real session over your working tree. Every step is visible, every change
+            lands in a file you can review, and the shell is one tool call away.
+          </p>
+        </div>
+
+        <div class="rows">
+          <article class="row">
+            <h3>Reads the whole project</h3>
+            <p>
+              Search, glob, and file reads run against the repository you point it at. It follows
+              imports and checks its assumptions before editing.
+            </p>
+            <p class="meta">tools · read · grep · glob · list</p>
+          </article>
+          <article class="row">
+            <h3>Edits and verifies</h3>
+            <p>
+              Changes are patches, not rewritten files. It can run the test suite, a typecheck, or
+              a single command to prove the change holds.
+            </p>
+            <p class="meta">tools · patch · shell · task</p>
+          </article>
+          <article class="row">
+            <h3>Lives where you work</h3>
+            <p>
+              The same session runs in the terminal UI and the desktop app. Bring your own provider
+              key, or point it at a local endpoint.
+            </p>
+            <p class="meta">agents · build · plan · general</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="run" id="run" aria-labelledby="run-title">
+        <div class="section-head">
+          <h2 id="run-title">Build it from source.</h2>
+          <p>
+            The repository is a Bun workspace. The CLI build embeds the web UI; the desktop build
+            wraps it in Electron.
+          </p>
+        </div>
+        <div class="code-block">
+          <button class="copy" type="button" data-copy="git clone https://github.com/fuvji/jecode.git&#10;cd jecode&#10;bun install&#10;bun --cwd packages/cli build --single --baseline&#10;bun --cwd packages/desktop build">
+            Copy
+          </button>
+          <pre><code><span class="cmd">git clone</span> https://github.com/fuvji/jecode.git
+<span class="cmd">cd</span> jecode
+<span class="cmd">bun install</span>
+<span class="cmd">bun --cwd packages/cli build --single --baseline</span>
+<span class="cmd">bun --cwd packages/desktop build</span></code></pre>
+        </div>
+        <p class="note">
+          Needs Bun 1.4.4. A release build wants your own Ed25519 key and integrity manifest; a
+          development build does not.
+        </p>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p><strong>jecode</strong> — a fork of OpenCode. MIT licensed.</p>
+      <p><a href="https://github.com/fuvji/jecode">github.com/fuvji/jecode</a></p>
+    </footer>
+
+    <script>
+      const button = document.querySelector(".copy")
+      button?.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(button.dataset.copy)
+          button.textContent = "Copied"
+          setTimeout(() => (button.textContent = "Copy"), 1600)
+        } catch {
+          button.textContent = "Select the text"
+        }
+      })
+    </script>
+  </body>
+</html>
