@@ -12,6 +12,12 @@ export function useUsageFormat() {
         minimumFractionDigits: cents === "auto" && Number.isInteger(value) ? 0 : 2,
         maximumFractionDigits: 2,
       }).format(value),
+    /** Compact token counts in the locale's number system. */
+    tokens: (value: number) =>
+      new Intl.NumberFormat(language.intl(), { notation: "compact", maximumFractionDigits: 1 }).format(value),
+    /** A whole-number percentage; the value is 0-100, not a 0-1 ratio. */
+    percent: (value: number) =>
+      new Intl.NumberFormat(language.intl(), { style: "percent", maximumFractionDigits: 0 }).format(value / 100),
     time: (at: number) =>
       language.t("usage.time", {
         date: new Intl.DateTimeFormat(language.intl(), { month: "short", day: "numeric" }).format(at),

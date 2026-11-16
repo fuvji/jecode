@@ -1,0 +1,32 @@
+[data-composer-pill][data-slot="session-usage-pill"] {
+  gap: 6px;
+  padding-inline: 9px 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-slot="session-usage-ring"] {
+  flex-shrink: 0;
+  color: var(--v2-icon-icon-muted);
+}
+
+[data-slot="session-usage-value"] {
+  color: var(--v2-text-text-base);
+  font-weight: 530;
+}
+
+[data-slot="session-usage-unit"] {
+  color: var(--v2-text-text-muted);
+  font-size: 11px;
+}
+
+[data-slot="session-usage-pill"][data-level="warn"] [data-slot="session-usage-ring"] {
+  color: var(--v2-state-fg-warning);
+}
+
+[data-slot="session-usage-pill"][data-level="danger"] [data-slot="session-usage-ring"] {
+  color: var(--v2-state-fg-danger);
+}
+
+[data-slot="session-usage-pill"][data-level="danger"] [data-slot="session-usage-value"] {
+  color: var(--v2-state-fg-danger);
+}

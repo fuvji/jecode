@@ -41,6 +41,7 @@ import { SessionGoLimitTray } from "./go-limit-tray"
 import { SessionActivityChips, type SessionActivityItem } from "./activity-chips"
 import { SessionComposerLane, useComposerLaneAlignment } from "./composer-lane"
 import { SessionTodoPill } from "./todo-pill"
+import { SessionUsagePill } from "./usage-pill"
 import { sessionTodos, todoFinished } from "./todos"
 import { useOpenSessionRoute } from "../session-identity-header"
 import { resolveSessionComposerSelection } from "./selection"
@@ -594,6 +595,7 @@ export function ActiveSessionComposerRegion(props: {
             <Show when={todosVisible()}>
               <SessionTodoPill todos={todos()} />
             </Show>
+            <SessionUsagePill session={props.session} selection={() => props.model.composer.model.selection} />
             <SessionPluginPills session={props.view()} screen={props.screen} alignment={alignment} />
           </SessionComposerLane>
           <SessionQueuePanel queue={props.model.queue} hidden={props.model.region.state.blocked()} />
