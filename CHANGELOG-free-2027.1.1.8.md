@@ -1,4 +1,4 @@
-# olliEcode Free 2027.1.1.8
+# jetcode Free 2027.1.1.8
 
 ## Auto JB editor
 
@@ -22,9 +22,9 @@
 - Remaining user-visible "OpenCode" strings removed from the bundled UI:
   desktop menu labels, recovery dialogs, WSL onboarding, terminal errors,
   update toasts, and the theme name.
-- Default theme now reports as "olliEcode".
+- Default theme now reports as "jetcode".
 - Windows app-menu heading and the free provider row in Settings now read
-  "olliEcode".
+  "jetcode".
 
 ## Startup
 

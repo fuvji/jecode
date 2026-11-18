@@ -43,7 +43,7 @@ export function composerProviderName(
       (item.integrationID ?? item.id) === provider.canonical,
   )
 
-  return direct ? `olliEcode / ${name}` : name
+  return direct ? `jetcode / ${name}` : name
 }
 
 export function composerModelLabels(

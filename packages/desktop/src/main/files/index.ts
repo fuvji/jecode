@@ -62,7 +62,7 @@ function make(
   return {
     openDirectoryPicker: Effect.fn("DesktopFiles.openDirectoryPicker")(function* (options?: DirectoryPickerOptions) {
       const result = yield* Effect.promise(() =>
-        dialog.showOpenDialog(BrowserWindow.getFocusedWindow() ?? (undefined as unknown as Electron.BrowserWindow), { // // olliecode: parent-window so dialogs surface front
+        dialog.showOpenDialog(BrowserWindow.getFocusedWindow() ?? (undefined as unknown as Electron.BrowserWindow), { // // jetcode: parent-window so dialogs surface front
           properties: ["openDirectory", ...(options?.multiple ? ["multiSelections" as const] : []), "createDirectory"],
           title: options?.title ?? nativeT("desktop.dialog.chooseFolder"),
           defaultPath: options?.defaultPath,
@@ -80,7 +80,7 @@ function make(
 
       return yield* Effect.gen(function* () {
         const result = yield* Effect.promise(() =>
-          dialog.showOpenDialog(BrowserWindow.getFocusedWindow() ?? (undefined as unknown as Electron.BrowserWindow), { // // olliecode: parent-window so dialogs surface front
+          dialog.showOpenDialog(BrowserWindow.getFocusedWindow() ?? (undefined as unknown as Electron.BrowserWindow), { // // jetcode: parent-window so dialogs surface front
             properties: ["openFile", ...(options?.multiple ? ["multiSelections" as const] : [])],
             title: options?.title ?? nativeT("desktop.dialog.chooseFile"),
             defaultPath: options?.defaultPath,
@@ -110,7 +110,7 @@ function make(
     releasePickedFiles: pickedFiles.release,
     saveFile: Effect.fn("DesktopFiles.saveFile")(function* (options: SaveFilePickerOptions, content: string) {
       const result = yield* Effect.promise(() =>
-        dialog.showSaveDialog(BrowserWindow.getFocusedWindow() ?? (undefined as unknown as Electron.BrowserWindow), { // // olliecode: parent-window so dialogs surface front
+        dialog.showSaveDialog(BrowserWindow.getFocusedWindow() ?? (undefined as unknown as Electron.BrowserWindow), { // // jetcode: parent-window so dialogs surface front
           title: options?.title ?? nativeT("desktop.dialog.saveFile"),
           defaultPath: options?.defaultPath,
         }),

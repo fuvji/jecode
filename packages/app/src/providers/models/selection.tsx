@@ -42,6 +42,7 @@ import { normalizeAgentList } from "@/runtime/server/global-sync/utils"
 import { useServerSDK } from "@/runtime/server/client"
 import { ScopedKey, type ServerScope } from "@/runtime/server/scope"
 import { useConfiguredModel } from "./configured"
+import { rankModels } from "./models"
 
 const ModelKeySchema = Schema.Struct({
   providerID: Schema.String,
@@ -391,14 +392,16 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
     }
 
     const defaultModel = () => {
-      for (const provider of providers.connected()) {
-        const first = Object.values(provider.models)[0]
+      const best = rankModels(
+        providers.connected().flatMap((provider) =>
+          Object.values(provider.models).map((model) => ({ ...model, provider: { id: provider.id } })),
+        ),
+      )[0]
 
-        if (!first) continue
-        const model = { providerID: provider.id, modelID: first.id }
+      if (!best) return
+      const model = { providerID: best.provider.id, modelID: best.id }
 
-        if (validModel(model)) return model
-      }
+      if (validModel(model)) return model
     }
 
     const fallback = createMemo(() => firstModel(configuredModel, recentModel, defaultModel))

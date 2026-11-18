@@ -83,6 +83,27 @@ export function TargetSessionRouteContent() {
 
   const closeTab = () => tabs.removeSessionTab({ server: server.key, sessionId: params.id })
 
+  // A persisted tab can outlive its session (deleted database, reset, or a
+  // project that was removed elsewhere). Showing "session not found" on boot
+  // strands the whole window on a dead tab, so discard it and let the tab
+  // model move to the next tab, or home when it was the only one.
+  let discardedMissing: string | undefined
+  createEffect(() => {
+    const current = view()
+
+    if (current.type !== "not-found") {
+      discardedMissing = undefined
+      return
+    }
+
+    const identity = `${server.key}:${params.id}`
+
+    if (discardedMissing === identity) return
+
+    discardedMissing = identity
+    queueMicrotask(closeTab)
+  })
+
   return (
     <>
       <MarkSessionViewed sessionID={viewed} />

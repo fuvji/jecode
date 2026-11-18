@@ -9,6 +9,7 @@ import { createEffect, createSignal, getOwner, onCleanup, startTransition, untra
 import type { NewSessionStartView } from "@/new-session/machine"
 import { useLocation, useNavigate } from "@solidjs/router"
 import { usePlatform } from "@/runtime/platform/platform"
+import { pathKey } from "@/workspaces/path-key"
 import { uuid } from "@opencode/util/uuid"
 import { SessionTabsRemovedDetail } from "@/shell/titlebar/session-events"
 import { sessionHref } from "@/shell/routes/session"
@@ -749,6 +750,33 @@ export const { use: useTabs, provider: TabsProvider } = createSimpleContext({
         for (const key of removed) memory.remove(key)
 
         for (const key of removed) removeInfo(key)
+      },
+      /** Closes drafts that would recreate a project after it is erased. */
+      removeProjectDrafts(input: { server: ServerConnection.Key; directory: string }) {
+        const target = pathKey(input.directory)
+        const drafts = store.filter(
+          (tab): tab is DraftTab =>
+            tab.type === "draft" && tab.server === input.server && pathKey(tab.directory) === target,
+        )
+
+        if (!drafts.length) return
+        const keys = drafts.map(tabKey)
+        const ids = new Set(drafts.map((tab) => tab.draftID))
+        const route = currentRoute()
+        const removedCurrent = route.type === "draft" && ids.has(route.draftID)
+
+        void commitPromotion(
+          () => ({ type: "abandon", keys }),
+          () => {
+            setStore((tabs) => tabs.filter((tab) => !keys.includes(tabKey(tab))))
+            if (removedCurrent) navigate("/")
+          },
+        )
+
+        if (keys.some((key) => key === recentKey())) setRecentKey(undefined)
+        for (const key of keys) memory.remove(key)
+        for (const key of keys) removeInfo(key)
+        for (const draftID of ids) removeDraftPersisted(draftID)
       },
       rememberSessionInfo(tab: SessionTab, session: SessionInfo, prompted: boolean) {
         const key = tabKey(tab)

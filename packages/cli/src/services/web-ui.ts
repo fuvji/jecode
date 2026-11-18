@@ -4,17 +4,17 @@ import { HttpServerError, HttpServerRequest, HttpServerResponse } from "effect/h
 import { createHash } from "node:crypto"
 import { load, type AssetMap, type BrotliMap } from "../app-assets"
 
-// olliEcode overlay. This file replaces upstream's web-ui.ts outright so the
-// /_olliecode/ delegation CANNOT drift. Previously this path was inserted by
+// jetcode overlay. This file replaces upstream's web-ui.ts outright so the
+// /_jetcode/ delegation CANNOT drift. Previously this path was inserted by
 // scripts/sync.sh via a grep-anchored patch_file against upstream's `/auth/`
 // line; a single whitespace change upstream caused `grep -F` to miss, the
 // build shipped with the raw upstream file, and every POST to
-// /_olliecode/reset-limits fell through to serveUI below (status: 405 for
+// /_jetcode/reset-limits fell through to serveUI below (status: 405 for
 // non-GET/HEAD). The reset pill in the renderer then showed "HTTP 405" to
 // the user. Owning the file end-to-end here is immune to that failure mode.
 //
 // Keep this file byte-for-byte aligned with upstream except for the single
-// `/_olliecode/` entry in the delegation list and this comment. If upstream
+// `/_jetcode/` entry in the delegation list and this comment. If upstream
 // adds a new allow-list entry (e.g. `/api/experimental/`) sync will NOT pull
 // it in; grep this file on every sync and mirror the change by hand.
 
@@ -35,7 +35,7 @@ export const handler = Effect.fn("cli.web-ui.handler")(function* (options?: {
         url.pathname === "/api" ||
         url.pathname.startsWith("/api/") ||
         url.pathname.startsWith("/auth/") ||
-        url.pathname.startsWith("/_olliecode/") ||
+        url.pathname.startsWith("/_jetcode/") ||
         url.pathname === "/openapi.json"
       )
         return yield* api.pipe(

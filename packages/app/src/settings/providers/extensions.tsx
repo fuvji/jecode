@@ -19,6 +19,7 @@ import { usePlatform } from "@/runtime/platform/platform"
 import { SettingsList } from "@/settings/list"
 import { createExtensionLoad, ExtensionLoadFailed } from "@/settings/extension-load"
 import type { SettingsView } from "@/settings/surface"
+import { DialogInstallExtension, type ExtensionKind } from "./install-extension"
 import "@/settings/settings.css"
 import "@/shell/search-list.css"
 
@@ -90,6 +91,19 @@ export const SettingsExtensions: Component<{
   })
   const skills = () => data.location.skill.list() ?? []
 
+  const openInstall = (kind: ExtensionKind) =>
+    dialog.show(() => (
+      <DialogInstallExtension
+        kind={kind}
+        directory={props.directory}
+        onInstalled={() => {
+          plugins.invalidate()
+          void data.location.skill.sync().catch(() => undefined)
+          void data.location.mcp.server.sync(location()).catch(() => undefined)
+        }}
+      />
+    ))
+
   return (
     <>
       <div class="settings-tab-header">
@@ -123,9 +137,9 @@ export const SettingsExtensions: Component<{
                 <span class="settings-extension-heading text-13-medium">
                   {language.t("settings.extensions.availableAll")}
                 </span>
-                <span class="text-13-regular text-v2-text-text-muted">
-                  {language.t("settings.extensions.manageConfig")}
-                </span>
+                <Button size="small" variant="outline" icon="plus" onClick={() => openInstall("mcps")}>
+                  {language.t("settings.extensions.install")}
+                </Button>
               </div>
               <SettingsList variant="catalog">
                 <For each={mcps()}>
@@ -200,9 +214,9 @@ export const SettingsExtensions: Component<{
                 <span class="settings-extension-heading text-13-medium">
                   {language.t("settings.extensions.availableAll")}
                 </span>
-                <span class="text-13-regular text-v2-text-text-muted">
-                  {language.t("settings.extensions.manageConfig")}
-                </span>
+                <Button size="small" variant="outline" icon="plus" onClick={() => openInstall("plugins")}>
+                  {language.t("settings.extensions.install")}
+                </Button>
               </div>
               {/* The desktop's own server also lists the plugins main runs, so its rows stay while the list loads. */}
               <Show when={own() || pluginList()}>
@@ -227,9 +241,14 @@ export const SettingsExtensions: Component<{
                 <span class="settings-extension-heading text-13-medium">
                   {language.t("settings.extensions.availableAll")}
                 </span>
-                <ExternalLink class="settings-extension-link text-13-regular" href="https://opencode.ai/docs/skills">
-                  {language.t("settings.extensions.addSkills")}
-                </ExternalLink>
+                <div class="flex items-center gap-3">
+                  <ExternalLink class="settings-extension-link text-13-regular" href="https://opencode.ai/docs/skills">
+                    {language.t("settings.extensions.addSkills")}
+                  </ExternalLink>
+                  <Button size="small" variant="outline" icon="plus" onClick={() => openInstall("skills")}>
+                    {language.t("settings.extensions.install")}
+                  </Button>
+                </div>
               </div>
               <SettingsList variant="catalog">
                 <For each={skills()}>

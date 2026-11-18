@@ -1,5 +1,6 @@
 import { Show, type Component, type JSX } from "solid-js"
 import { useLanguage } from "@/runtime/i18n/language"
+import { ModelValueChart } from "./value-tag"
 
 type InputKey = "text" | "image" | "audio" | "video" | "pdf"
 
@@ -13,7 +14,9 @@ type ModelInfo = {
   }
   capabilities?: {
     reasoning: boolean
+    toolcall?: boolean
     input: InputMap
+    output?: { text?: boolean }
   }
   modalities?: {
     input: Array<string>
@@ -22,6 +25,8 @@ type ModelInfo = {
   limit: {
     context: number
   }
+  cost?: { input?: number; output?: number }
+  release_date?: string
 }
 
 function ModelTooltipRow(props: { name: JSX.Element; value: JSX.Element }) {
@@ -131,6 +136,7 @@ export const ModelTooltip: Component<{ model: ModelInfo; latest?: boolean; free?
         </Show>
         <ModelTooltipRow name={language.t("model.tooltip.reasoning")} value={reasoning()} />
         <ModelTooltipRow name={language.t("model.tooltip.context.label")} value={contextLimit()} />
+        <ModelValueChart model={props.model} />
       </div>
     )
   }
@@ -147,6 +153,7 @@ export const ModelTooltip: Component<{ model: ModelInfo; latest?: boolean; free?
       </Show>
       <div class="text-12-regular text-text-invert-base">{reasoning()}</div>
       <div class="text-12-regular text-text-invert-base">{context()}</div>
+      <ModelValueChart model={props.model} />
     </div>
   )
 }

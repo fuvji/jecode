@@ -1,4 +1,4 @@
-# olliEcode Free 2027.1.1.7
+# jetcode Free 2027.1.1.7
 
 ## What's new
 
@@ -10,7 +10,7 @@
   `Default (bundled)`; edit it, save your version as a preset, and the original
   stays intact underneath.
 - **Full rebrand.** Every visible "OpenCode" string in the app is now
-  "olliEcode" — provider names, connect dialogs, usage copy, About, settings,
+  "jetcode" — provider names, connect dialogs, usage copy, About, settings,
   pairing text. Code identifiers, config filenames and CLI command names are
   unchanged, so existing setups keep working.
 
@@ -26,7 +26,7 @@
 
 - Free edition: no key, no activation, no usage reset.
 - Version line `2027.1.1.7`, AppId `{B7E4D2A9-3C15-4F8B-8D62-9A1E5C7F2B40}`,
-  installs to `%LOCALAPPDATA%\Programs\olliEcode Free`.
+  installs to `%LOCALAPPDATA%\Programs\jetcode Free`.
 - Signed file manifest and Ed25519 release signature rebuilt for this version.
 - Auto-update feed: `https://cdn.example.com/free-latest.json`.
 

@@ -8,7 +8,7 @@ import path from "node:path"
 // invalidates the Ed25519 manifest and the watchdog exits the app.
 export const WEBSITE_URL = "https://example.com"
 export const WEBSITE_LABEL = "example.com"
-export const WEBSITE_CHANNEL = "olliecode:open-website"
+export const WEBSITE_CHANNEL = "jetcode:open-website"
 
 export function websiteMenuItem(): Electron.MenuItemConstructorOptions {
   return {
@@ -70,9 +70,9 @@ export function assertBrandPinned(): void {
   } catch {
     return
   }
-  if (!source.includes("olliecode-website-pill")) {
+  if (!source.includes("jetcode-website-pill")) {
     try {
-      console.error("[olliEcode] brand check failed: website pill missing or altered")
+      console.error("[jetcode] brand check failed: website pill missing or altered")
     } catch {
       /* logging must never mask the exit */
     }

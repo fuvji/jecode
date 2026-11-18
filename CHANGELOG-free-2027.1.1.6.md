@@ -1,4 +1,4 @@
-# olliEcode Free 2027.1.1.6
+# jetcode Free 2027.1.1.6
 
 ## Fixes
 
@@ -16,6 +16,6 @@
 ## Build
 
 - Free edition: no key, no activation, no usage reset.
-- Version line `2027.1.1.6`, separate AppId, installs to `%LOCALAPPDATA%\Programs\olliEcode Free`.
+- Version line `2027.1.1.6`, separate AppId, installs to `%LOCALAPPDATA%\Programs\jetcode Free`.
 - 13,128 signed files, 653 sync-critical, Ed25519 manifest signature rebuilt.
 - Auto-update feed: `https://cdn.example.com/free-latest.json`.

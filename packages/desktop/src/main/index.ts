@@ -4,12 +4,14 @@ import { app } from "electron"
 import { acquireApplicationLock, configureApplication } from "./lifecycle/configure"
 import { assertNoDebugEndpoint, installShield } from "./service/shield"
 import { ensureLicensedOrPrompt } from "./service/license-gate"
+import { keepAwake } from "./lifecycle/power"
 import { startSidecarProbe } from "./service/sidecar-probe"
 import { registerLicenseManagement } from "./service/license-gate"
 import { registerUpdater } from "./service/updater"
 import { assertBrandPinned, registerBrand } from "./service/brand"
 import { registerStorageSnapshotHandler } from "./storage/snapshot"
 import { createEarlyWindow, earlyWindowClosed } from "./windows/early"
+import { registerOfflineModelPrompt } from "./service/offline-model"
 import { rendererAssetsServed } from "./windows/protocol"
 import { registerRendererScheme } from "./windows/scheme"
 
@@ -18,6 +20,13 @@ import { registerRendererScheme } from "./windows/scheme"
 // hundred milliseconds of module evaluation and layers — loads. Configuration and the scheme must
 // precede ready; the window is created the moment ready fires; everything else is imported after.
 configureApplication()
+
+// The license gate owns the only window until activation succeeds. Destroying
+// that dialog must not trigger Electron's default quit-on-last-window behavior
+// before the main window is created; the lifecycle layer installs the real
+// handler after the gate. Without this listener a fresh activation writes the
+// license cache and then exits instead of opening the app.
+app.on("window-all-closed", () => {})
 
 // Removes Chromium debugging endpoints on packaged builds before the first
 // window can be attached to. Development builds are untouched.
@@ -49,9 +58,12 @@ if (acquireApplicationLock()) {
     }
     registerStorageSnapshotHandler()
     createEarlyWindow()
+    registerOfflineModelPrompt()
     marks.window = Date.now()
     registerLicenseManagement()
     registerUpdater()
+    // Long agent turns must not be suspended when the window is unfocused.
+    keepAwake()
     startSidecarProbe()
 
     // The window's renderer is already loading. Its HTML and preloaded chunks are served from this

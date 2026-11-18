@@ -14,6 +14,8 @@ import type {
   PluginListOutput,
   PluginGuiInput,
   PluginGuiOutput,
+  PluginInstallInput,
+  PluginInstallOutput,
   PluginCheckInput,
   PluginCheckOutput,
   PluginUpdateInput,
@@ -173,6 +175,8 @@ import type {
   ProjectListOutput,
   ProjectUpdateInput,
   ProjectUpdateOutput,
+  ProjectRemoveInput,
+  ProjectRemoveOutput,
   FormListInput,
   FormListOutput,
   PermissionRequestListInput,
@@ -207,6 +211,8 @@ import type {
   CommandListOutput,
   SkillListInput,
   SkillListOutput,
+  SkillInstallInput,
+  SkillInstallOutput,
   RpcCallInput,
   RpcCallOutput,
   EventSubscribeInput,
@@ -569,6 +575,18 @@ export function make(options: ClientOptions) {
             successStatus: 200,
             declaredStatuses: [400, 401, 404],
             empty: false,
+          },
+          requestOptions,
+        ),
+      install: (input: PluginInstallInput, requestOptions?: RequestOptions) =>
+        request<PluginInstallOutput>(
+          {
+            method: "PUT",
+            path: `/api/plugin/install`,
+            body: { package: input["package"] },
+            successStatus: 204,
+            declaredStatuses: [400, 401, 404, 503],
+            empty: true,
           },
           requestOptions,
         ),
@@ -1732,12 +1750,12 @@ export function make(options: ClientOptions) {
           ),
       },
       config: {
-        update: (input: ExperimentalConfigUpdateInput, requestOptions?: RequestOptions) =>
+        update: (input?: ExperimentalConfigUpdateInput, requestOptions?: RequestOptions) =>
           request<ExperimentalConfigUpdateOutput>(
             {
               method: "PATCH",
               path: `/api/experimental/config`,
-              body: { shell: input["shell"] },
+              body: { shell: input?.["shell"], plugins: input?.["plugins"] },
               successStatus: 204,
               declaredStatuses: [400, 401, 404],
               empty: true,
@@ -2074,6 +2092,17 @@ export function make(options: ClientOptions) {
           },
           requestOptions,
         ),
+      remove: (input: ProjectRemoveInput, requestOptions?: RequestOptions) =>
+        request<ProjectRemoveOutput>(
+          {
+            method: "DELETE",
+            path: `/api/project/${encodeURIComponent(input.projectID)}`,
+            successStatus: 204,
+            declaredStatuses: [400, 401, 403, 404],
+            empty: true,
+          },
+          requestOptions,
+        ),
     },
     form: {
       list: (input?: FormListInput, requestOptions?: RequestOptions) =>
@@ -2256,6 +2285,18 @@ export function make(options: ClientOptions) {
             method: "GET",
             path: `/api/skill`,
             query: { location: input?.["location"] },
+            successStatus: 200,
+            declaredStatuses: [400, 401, 404],
+            empty: false,
+          },
+          requestOptions,
+        ),
+      install: (input: SkillInstallInput, requestOptions?: RequestOptions) =>
+        request<SkillInstallOutput>(
+          {
+            method: "POST",
+            path: `/api/skill/install`,
+            body: { url: input["url"], name: input["name"] },
             successStatus: 200,
             declaredStatuses: [400, 401, 404],
             empty: false,

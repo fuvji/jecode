@@ -249,8 +249,8 @@ const STYLES = `
   @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
 `
 
-// olliEcode wordmark — same path geometry as packages/ui/src/components/logo.tsx (Logo).
-const WORDMARK = `<svg class="wordmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 234 42" fill="none" aria-label="olliEcode" role="img">
+// jetcode wordmark — same path geometry as packages/ui/src/components/logo.tsx (Logo).
+const WORDMARK = `<svg class="wordmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 234 42" fill="none" aria-label="jetcode" role="img">
         <path d="M21 30H9V18H21V30Z" fill="var(--oc-icon-weak)" />
         <path d="M21 12H9V30H21V12ZM27 36H3V6H27V36Z" fill="var(--oc-icon-base)" />
         <path d="M45 30H39V24H45V30Z" fill="var(--oc-icon-weak)" />

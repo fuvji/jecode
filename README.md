@@ -1,4 +1,4 @@
-# olliEcode Free â€” Source
+# jetcode â€” Source
 
 A fork of [OpenCode](https://github.com/anomalyco/opencode) (MIT) with a rebranded interface and an Auto JB toggle.
 
@@ -6,8 +6,8 @@ A fork of [OpenCode](https://github.com/anomalyco/opencode) (MIT) with a rebrand
 
 - `packages/` â€” app, desktop, CLI, core, AI, UI, plugins and the rest of the source tree
 - `script/` and `patches/` â€” upstream build tooling
-- `installer/olliEcode-Setup-Free.iss` â€” the free-edition Inno Setup script
-- `shortcuts/olliEcode.vbs` â€” the direct launcher
+- `installer/jetcode-Setup.iss` â€” the free-edition Inno Setup script
+- `shortcuts/jetcode.vbs` â€” the direct launcher
 - `CHANGELOG-free-2027.1.1.9.md`
 
 ## Not included

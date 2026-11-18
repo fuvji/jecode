@@ -26,7 +26,7 @@ export const name = (server: string, tool: string) =>
 
 /** Whether this server's tools are reached through Code Mode. */
 export const usesCodeMode = (tool: { readonly codemode?: boolean }) =>
-  tool.codemode === true ? true : process.env.OLLIECODE_MCP_DIRECT === "1" ? false : tool.codemode !== false
+  tool.codemode === true ? true : process.env.JETCODE_MCP_DIRECT === "1" ? false : tool.codemode !== false
 
 export interface Interface {
   /**

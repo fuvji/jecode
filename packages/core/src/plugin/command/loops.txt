@@ -1,0 +1,16 @@
+Work in a continuous verified loop until the requested result is complete.
+
+For the task below:
+
+1. Define the smallest observable success condition.
+2. Inspect the relevant code, configuration, and existing conventions.
+3. Make the smallest coherent change that can achieve the result.
+4. Run the most relevant build, typecheck, test, or runtime check.
+5. If it fails, diagnose the cause and fix it. Repeat from step 3.
+6. Do not stop at the first failure, at a partial implementation, or at an unverified claim.
+7. When the success condition holds, report exactly what changed, what was verified, and any remaining limitation.
+
+Keep working autonomously. Ask only when blocked by information that cannot be obtained from the project, tools, or user request.
+
+Task:
+$ARGUMENTS

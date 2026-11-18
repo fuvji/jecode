@@ -1,3 +1,4 @@
+import { Config } from "@opencode/core/config"
 import { Plugin } from "@opencode/core/plugin"
 import { PluginUpdate } from "@opencode/core/plugin/update"
 import { InvalidRequestError, PluginNotFoundError, ServiceUnavailableError } from "@opencode/protocol/errors"
@@ -23,6 +24,33 @@ export const PluginHandler = HttpApiBuilder.group(Api, "server.plugin", (handler
             message: `No active plugin with a ./gui-experimental bundle: ${ctx.query.id}`,
           })
         return yield* response(Effect.succeed(bundle))
+      }),
+    )
+    .handle("plugin.install", (ctx) =>
+      Effect.gen(function* () {
+        const target = ctx.payload.package.trim()
+        if (!target || target.length > 240 || /\s/.test(target))
+          return yield* new InvalidRequestError({
+            message: "Enter a package name, git URL, or local plugin path without spaces.",
+            field: "package",
+          })
+
+        const config = yield* Config.Service
+        if (!config.update)
+          return yield* new ServiceUnavailableError({ message: "Config updates are unavailable", service: "config" })
+        const current = Config.latest(yield* config.entries(), "plugins") ?? []
+        const installed = current.some((entry) => (typeof entry === "string" ? entry : entry.package) === target)
+        if (installed) return
+
+        yield* config.update({ plugins: [...current, target] }).pipe(
+          Effect.mapError(
+            (cause) =>
+              new ServiceUnavailableError({
+                message: `Could not add ${target} to the global config: ${String(cause)}`,
+                service: "config",
+              }),
+          ),
+        )
       }),
     )
     .handle("plugin.check", (ctx) =>

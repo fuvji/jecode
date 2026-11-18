@@ -109,6 +109,10 @@ export type PluginGuiInput = {
 export type PluginGuiOutput = { readonly location: Location.PublicRef; readonly data: Plugin.GuiBundle }
 export type PluginGuiOperation<E = never> = (input: PluginGuiInput) => Effect.Effect<PluginGuiOutput, E>
 
+export type PluginInstallInput = { readonly package: string }
+export type PluginInstallOutput = void
+export type PluginInstallOperation<E = never> = (input: PluginInstallInput) => Effect.Effect<PluginInstallOutput, E>
+
 export type PluginCheckInput = {
   readonly location?: { readonly directory?: string | undefined } | undefined
   readonly target?: string | undefined
@@ -126,6 +130,7 @@ export type PluginUpdateOperation<E = never> = (input: PluginUpdateInput) => Eff
 export interface PluginApi<E = never> {
   readonly list: PluginListOperation<E>
   readonly gui: PluginGuiOperation<E>
+  readonly install: PluginInstallOperation<E>
   readonly check: PluginCheckOperation<E>
   readonly update: PluginUpdateOperation<E>
 }
@@ -1884,9 +1889,14 @@ export type ProjectUpdateInput = {
 export type ProjectUpdateOutput = Project.Info
 export type ProjectUpdateOperation<E = never> = (input: ProjectUpdateInput) => Effect.Effect<ProjectUpdateOutput, E>
 
+export type ProjectRemoveInput = { readonly projectID: Project.ID }
+export type ProjectRemoveOutput = void
+export type ProjectRemoveOperation<E = never> = (input: ProjectRemoveInput) => Effect.Effect<ProjectRemoveOutput, E>
+
 export interface ProjectApi<E = never> {
   readonly list: ProjectListOperation<E>
   readonly update: ProjectUpdateOperation<E>
+  readonly remove: ProjectRemoveOperation<E>
 }
 
 export type FormListInput = { readonly location?: { readonly directory?: string | undefined } | undefined }
@@ -2037,8 +2047,13 @@ export type SkillListInput = { readonly location?: { readonly directory?: string
 export type SkillListOutput = { readonly location: Location.PublicRef; readonly data: ReadonlyArray<Skill.Info> }
 export type SkillListOperation<E = never> = (input?: SkillListInput) => Effect.Effect<SkillListOutput, E>
 
+export type SkillInstallInput = { readonly url: string; readonly name?: string | undefined }
+export type SkillInstallOutput = { readonly name: string }
+export type SkillInstallOperation<E = never> = (input: SkillInstallInput) => Effect.Effect<SkillInstallOutput, E>
+
 export interface SkillApi<E = never> {
   readonly list: SkillListOperation<E>
+  readonly install: SkillInstallOperation<E>
 }
 
 export type RpcCallInput = {
@@ -2122,6 +2137,7 @@ export type EventSubscribeInput = {
         | "permission.replied"
         | "plugin.updated"
         | "project.updated"
+        | "project.removed"
         | "worktree.updated"
         | "worktree.resolved"
         | "command.updated"
@@ -2794,10 +2810,17 @@ export interface ConfigApi<E = never> {
   readonly update: ExperimentalConfigUpdateOperation<E>
 }
 
-export type ExperimentalConfigUpdateInput = { readonly shell: string | null }
+export type ExperimentalConfigUpdateInput = {
+  readonly shell?: string | null | undefined
+  readonly plugins?:
+    | ReadonlyArray<
+        string | { readonly package: string; readonly options?: { readonly [x: string]: unknown } | undefined }
+      >
+    | undefined
+}
 export type ExperimentalConfigUpdateOutput = void
 export type ExperimentalConfigUpdateOperation<E = never> = (
-  input: ExperimentalConfigUpdateInput,
+  input?: ExperimentalConfigUpdateInput,
 ) => Effect.Effect<ExperimentalConfigUpdateOutput, E>
 
 export interface ExperimentalConfigApi<E = never> {

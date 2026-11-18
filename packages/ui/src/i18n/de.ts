@@ -115,7 +115,7 @@ export const dict = {
 
   "dialog.usageExceeded.freeTier.title": "Kostenloses Limit erreicht",
   "dialog.usageExceeded.freeTier.description":
-    "olliEcode Go für 10 $ pro Monat abonnieren und zuverlässigen Zugriff auf die besten Open-Source-Modelle erhalten.",
+    "jetcode Go für 10 $ pro Monat abonnieren und zuverlässigen Zugriff auf die besten Open-Source-Modelle erhalten.",
   "dialog.usageExceeded.freeTier.actionLabel": "Abonnieren",
 
   "ui.sessionTurn.status.delegating": "Arbeit wird delegiert",

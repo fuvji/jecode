@@ -449,6 +449,8 @@ function ProjectRow(props: {
                   onRevealProject={props.actions.reveal}
                   onClearNotifications={props.actions.clearNotifications}
                   onHideProject={props.actions.hide}
+                  canEraseProject={props.actions.canErase}
+                  onEraseProject={props.actions.erase}
                 />
               </Menu.Content>
             </Menu.Portal>

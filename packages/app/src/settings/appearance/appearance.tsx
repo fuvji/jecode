@@ -7,7 +7,7 @@ import { ExternalLink } from "@/runtime/platform/external-link"
 import { SettingsList } from "@/settings/list"
 import { SettingsRow } from "@/settings/row"
 import { createAppearanceSettingsController, type AppearanceSettingsController } from "@/settings/general/controllers"
-import { clearWallpaper, hasWallpaper, readClear, saveClear, saveWallpaper } from "@/olliecode-clear"
+import { clearWallpaper, hasWallpaper, readClear, saveClear, saveWallpaper } from "@/jetcode-clear"
 import "@/settings/settings.css"
 
 const schemeOptions: ("system" | "light" | "dark")[] = ["system", "light", "dark"]

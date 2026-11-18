@@ -9,7 +9,7 @@ const Manifest = Schema.fromJsonString(Schema.Struct({ version: Schema.NonEmptyS
 
 export type Channel = "local" | "dev" | "beta" | "prod"
 
-// olliEcode: accept "local" and make it the default so User-Agent matches the
+// jetcode: accept "local" and make it the default so User-Agent matches the
 // standalone CLI build and we get the looser free-tier bucket at opencode.ai.
 export function resolveChannel(): Channel {
   const raw = process.env.OPENCODE_CHANNEL

@@ -11,7 +11,7 @@ function resolveChannel() {
 
   if (raw === "latest") return "prod"
 
-  // olliEcode: default to "local" so desktop User-Agent matches the standalone
+  // jetcode: default to "local" so desktop User-Agent matches the standalone
   // CLI (which also defaults to "local" via packages/cli/src/version.ts).
   return "local"
 }
@@ -55,25 +55,25 @@ export default defineConfig(async ({ command }) => {
         dedupe: ["effect"],
       },
       define: {
-        // olliEcode: do NOT coerce "local" to "dev" here. The upstream mapping
+        // jetcode: do NOT coerce "local" to "dev" here. The upstream mapping
         // was done so Dev-channel branding + updater applied to local builds,
         // but it also sent User-Agent `opencode/dev/...` which opencode.ai
         // rate-limits more aggressively than `opencode/local/...` (the TUI's
         // UA from the same source tree). Keeping the raw channel string makes
         // the desktop's User-Agent match the TUI's bucket at opencode.ai.
         "import.meta.env.OPENCODE_CHANNEL": JSON.stringify(channel),
-        // olliEcode licensing: Ed25519 SPKI pubkey, base64-encoded. Same env
+        // jetcode licensing: Ed25519 SPKI pubkey, base64-encoded. Same env
         // var the CLI build reads (see scripts/sync.sh patch_file injecting
         // it into upstream/packages/cli/script/build.ts), so one secret
         // flows into both artifacts. Dev builds without the env var fall
         // through to the "dev-pubkey-replace" sentinel which fails verify.
-        OLLIECODE_LICENSE_PUBKEY: JSON.stringify(
-          (process.env.OLLIECODE_LICENSE_PUBKEY ?? "dev-pubkey-replace").replace(/\s+/g, ""),
+        JETCODE_LICENSE_PUBKEY: JSON.stringify(
+          (process.env.JETCODE_LICENSE_PUBKEY ?? "dev-pubkey-replace").replace(/\s+/g, ""),
         ),
         // Same salt the CLI build reads; must match so cache files encrypted
         // by one artifact decrypt in the other on the same HWID.
-        OLLIECODE_CACHE_SALT: JSON.stringify(
-          process.env.OLLIECODE_CACHE_SALT ?? "dev-cache-salt-replace",
+        JETCODE_CACHE_SALT: JSON.stringify(
+          process.env.JETCODE_CACHE_SALT ?? "dev-cache-salt-replace",
         ),
       },
       build: {

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs"
 import { copyFile, readdir, stat } from "node:fs/promises"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
@@ -8,6 +9,7 @@ import { DESKTOP_NATIVE_ENGLISH } from "@opencode/app/i18n/desktop-native"
 import { CLI_BINARIES, getCurrentCli, nodePtyPackage } from "./script/utils"
 
 const packageDir = path.dirname(fileURLToPath(import.meta.url))
+const desktopVersion = (JSON.parse(readFileSync(path.join(packageDir, "package.json"), "utf8")) as { version: string }).version
 
 // The Electron 42 packaging update briefly installed Linux launchers/icons under
 // "opencode-desktop". Keep that hidden desktop entry around so existing GNOME/KDE
@@ -64,7 +66,7 @@ const getBase = (appId: string): Configuration => {
   const desktopName = `${appId}.desktop`
 
   return {
-    artifactName: "opencode-desktop-${os}-${arch}.${ext}",
+    artifactName: "jetcode-desktop-${os}-${arch}.${ext}",
     directories: {
       output: "dist",
       buildResources: "resources",
@@ -75,9 +77,7 @@ const getBase = (appId: string): Configuration => {
     // https://developer.gnome.org/documentation/guidelines/maintainer/integrating.html
     // https://www.electron.build/docs/linux/
     // Release builds take their version from OPENCODE_VERSION instead of rewriting package.json.
-    extraMetadata: process.env.OPENCODE_VERSION
-      ? { desktopName, version: process.env.OPENCODE_VERSION }
-      : { desktopName },
+    extraMetadata: { desktopName, version: process.env.OPENCODE_VERSION ?? desktopVersion },
     files: [
       "out/**/*",
       "resources/**/*",
@@ -105,8 +105,12 @@ const getBase = (appId: string): Configuration => {
       {
         from: "resources/",
         to: "",
-        filter: ["opencode-cli", "opencode-cli.exe", "opencode-cli.version"],
+        filter: ["opencode-cli", "opencode-cli.exe", "opencode-cli.version", "gateway.json"],
       },
+      // Window/taskbar icons are read from process.resourcesPath/icons, not
+      // from inside app.asar. Without this copy packaged builds fall back to
+      // the Electron executable icon on Windows.
+      { from: "resources/icons", to: "icons" },
     ],
     afterPack: async (context) => {
       const arch = Arch[context.arch]
@@ -173,7 +177,7 @@ const getBase = (appId: string): Configuration => {
       target: ["dmg", "zip"],
     },
     protocols: {
-      name: "OpenCode",
+      name: "jetcode",
       schemes: ["opencode"],
     },
     win: {
@@ -218,7 +222,7 @@ export function getConfig() {
       return {
         ...base,
         appId,
-        productName: "olliEcode Dev",
+        productName: "jetcode Dev",
         publish: {
           provider: "generic",
           url: "https://opencode.ai/update/api/dev/desktop/opencode/",
@@ -236,8 +240,8 @@ export function getConfig() {
       return {
         ...base,
         appId,
-        productName: "olliEcode Beta",
-        protocols: { name: "OpenCode Beta", schemes: ["opencode"] },
+        productName: "jetcode Beta",
+        protocols: { name: "jetcode Beta", schemes: ["opencode"] },
         publish: {
           provider: "generic",
           url: "https://opencode.ai/update/api/beta/desktop/opencode/",
@@ -255,8 +259,8 @@ export function getConfig() {
       return {
         ...base,
         appId,
-        productName: "olliEcode",
-        protocols: { name: "OpenCode", schemes: ["opencode"] },
+        productName: "jetcode",
+        protocols: { name: "jetcode", schemes: ["opencode"] },
         // An Icon Composer package compiles to Assets.car, which macOS 26 and later draw the app icon from
         // (Dock, Finder, system dialogs and the system icon styles). Older macOS keeps using the ICNS.
         mac: { ...base.mac, icon: "resources/icons/icon.icon" },

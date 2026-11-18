@@ -1,4 +1,4 @@
-// olliEcode in-app auto-updater.
+// jetcode in-app auto-updater.
 //
 // Polls the license Worker for a signed update offer, downloads the Inno
 // Setup installer to %TEMP%, verifies its sha256, and surfaces an in-app
@@ -69,11 +69,15 @@ let initialTimer: NodeJS.Timeout | undefined
 // updater has no cross-module coupling beyond LicensingEngine for the
 // license cache read — one less bundler surprise to debug.
 function resolveGateway(): string {
-  const env = process.env.OLLIECODE_LICENSE_API
+  const env = process.env.JETCODE_LICENSE_API
   if (env && /^https:\/\//.test(env)) return env.replace(/\/$/, "")
   try {
-    const gatewayPath = path.join(app.getAppPath(), GATEWAY_FILENAME)
-    if (fs.existsSync(gatewayPath)) {
+    const candidates = [
+      process.resourcesPath ? path.join(process.resourcesPath, GATEWAY_FILENAME) : "",
+      path.join(app.getAppPath(), GATEWAY_FILENAME),
+    ].filter(Boolean)
+    for (const gatewayPath of candidates) {
+      if (!fs.existsSync(gatewayPath)) continue
       const parsed = JSON.parse(fs.readFileSync(gatewayPath, "utf8")) as { origin?: unknown }
       if (typeof parsed.origin === "string" && /^https:\/\/[^/?#\s]+\/?$/.test(parsed.origin)) {
         return parsed.origin.replace(/\/$/, "")
@@ -180,8 +184,16 @@ async function fetchLatest(engine: LicensingEngine): Promise<UpdateMeta | undefi
   }
 }
 
+function sha256File(file: string) {
+  try {
+    return crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex")
+  } catch {
+    return undefined
+  }
+}
+
 async function downloadVerify(meta: UpdateMeta): Promise<string | undefined> {
-  const dir = path.join(os.tmpdir(), "olliecode-update")
+  const dir = path.join(os.tmpdir(), "jetcode-update")
   try {
     fs.mkdirSync(dir, { recursive: true })
   } catch {
@@ -190,35 +202,70 @@ async function downloadVerify(meta: UpdateMeta): Promise<string | undefined> {
   // Fresh filename per version so a failed previous download doesn't
   // leave a stale file that passes the sha check later for the wrong
   // version string.
-  const dest = path.join(dir, `olliEcode-Setup-${meta.version.replace(/[^A-Za-z0-9._-]/g, "_")}.exe`)
+  const name = `jetcode-Setup-${meta.version.replace(/[^A-Za-z0-9._-]/g, "_")}.exe`
+  const dest = path.join(dir, name)
+  const part = `${dest}.part`
 
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), DOWNLOAD_TIMEOUT_MS)
-  let buf: Buffer
-  try {
-    const resp = await fetch(meta.url, { signal: controller.signal })
-    if (!resp.ok) return undefined
-    buf = Buffer.from(await resp.arrayBuffer())
-  } catch {
-    return undefined
-  } finally {
-    clearTimeout(timer)
-  }
+  if (fs.existsSync(dest) && sha256File(dest) === meta.sha256) return dest
 
-  const actualSha = crypto.createHash("sha256").update(buf).digest("hex")
-  if (actualSha !== meta.sha256) {
-    // Do NOT persist a corrupt or tampered installer to disk. Silent
-    // failure here just means no update offer surfaces — the user stays
-    // on the current version safely.
-    return undefined
-  }
+  // Resume the partial installer after a dropped connection or an app restart,
+  // and retry transient CDN failures. The sha256 check below remains the only
+  // thing that allows the file to be executed, so a partial or corrupt retry is
+  // never installable.
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    let start = 0
+    try {
+      start = fs.statSync(part).size
+    } catch {
+      start = 0
+    }
 
-  try {
-    fs.writeFileSync(dest, buf, { mode: 0o755 })
-  } catch {
-    return undefined
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), DOWNLOAD_TIMEOUT_MS)
+    try {
+      const resp = await fetch(meta.url, {
+        signal: controller.signal,
+        headers: start > 0 ? { range: `bytes=${start}-` } : {},
+      })
+      if (resp.status === 416 && start > 0) {
+        // The partial file is already at the end; verify it instead of
+        // requesting the whole payload again.
+      } else if (resp.ok) {
+        const body = Buffer.from(await resp.arrayBuffer())
+        if (resp.status === 206) fs.appendFileSync(part, body)
+        else fs.writeFileSync(part, body)
+      } else {
+        throw new Error(`installer download returned ${resp.status}`)
+      }
+    } catch {
+      // The partial .part file stays for the next attempt.
+      if (attempt < 5) await new Promise((resolve) => setTimeout(resolve, 2_000 * attempt))
+      continue
+    } finally {
+      clearTimeout(timer)
+    }
+
+    if (sha256File(part) === meta.sha256) {
+      try {
+        fs.rmSync(dest, { force: true })
+        fs.renameSync(part, dest)
+        fs.chmodSync(dest, 0o755)
+        return dest
+      } catch {
+        return undefined
+      }
+    }
+
+    // A mismatch can be a truly corrupt payload, or a server that ignored the
+    // Range header and sent a second copy. Drop the partial and try clean.
+    try {
+      fs.rmSync(part, { force: true })
+    } catch {
+      // Best effort; the next attempt starts from a readable size.
+    }
+    if (attempt < 5) await new Promise((resolve) => setTimeout(resolve, 2_000 * attempt))
   }
-  return dest
+  return undefined
 }
 
 function notifyRenderer(meta: UpdateMeta): void {
@@ -230,7 +277,7 @@ function notifyRenderer(meta: UpdateMeta): void {
       // the pill tooltip and the confirm dialog, leaking the internal
       // changelog ("DB wipe moved into the sidecar" etc). Dropped at the
       // source now, defence-in-depth with the preload scrub.
-      win.webContents.send("olliecode:update-ready", { version: meta.version })
+      win.webContents.send("jetcode:update-ready", { version: meta.version })
     } catch {
       /* best-effort */
     }
@@ -260,10 +307,10 @@ async function tryUpdateCheck(engine: LicensingEngine): Promise<void> {
 export function registerUpdater(): void {
   // Guard against double-registration — hot-reload / re-entrant boots.
   try {
-    ipcMain.removeHandler("olliecode:update-install")
-    ipcMain.removeHandler("olliecode:update-status")
-    ipcMain.removeHandler("olliecode:update-confirm")
-    ipcMain.removeHandler("olliecode:app-version")
+    ipcMain.removeHandler("jetcode:update-install")
+    ipcMain.removeHandler("jetcode:update-status")
+    ipcMain.removeHandler("jetcode:update-confirm")
+    ipcMain.removeHandler("jetcode:app-version")
   } catch {
     /* no prior */
   }
@@ -280,7 +327,7 @@ export function registerUpdater(): void {
     void tryUpdateCheck(engine).catch(() => undefined)
   }, POLL_INTERVAL_MS)
 
-  ipcMain.handle("olliecode:update-status", async () => {
+  ipcMain.handle("jetcode:update-status", async () => {
     if (!currentUpdate) return { ready: false }
     return { ready: true, version: currentUpdate.meta.version, notes: currentUpdate.meta.notes }
   })
@@ -299,14 +346,14 @@ export function registerUpdater(): void {
   // is dropped at the preload boundary; even if an older renderer passes
   // it, this handler ignores it.
   ipcMain.handle(
-    "olliecode:update-confirm",
+    "jetcode:update-confirm",
     async (_, info: { version?: string }) => {
       const version = info?.version || "latest"
       const r = await dialog.showMessageBox({
         type: "question",
-        title: "olliEcode update",
+        title: "jetcode update",
         message: `Install version ${version}?`,
-        detail: "olliEcode will close and reopen.",
+        detail: "jetcode will close and reopen.",
         buttons: ["Install", "Later"],
         defaultId: 0,
         cancelId: 1,
@@ -320,9 +367,9 @@ export function registerUpdater(): void {
   // version badge — a glance-only "v2026.11.05.7" so the user always knows
   // what they're on without hovering the update pill (which used to leak
   // the full notes into its tooltip).
-  ipcMain.handle("olliecode:app-version", async () => app.getVersion())
+  ipcMain.handle("jetcode:app-version", async () => app.getVersion())
 
-  ipcMain.handle("olliecode:update-install", async () => {
+  ipcMain.handle("jetcode:update-install", async () => {
     if (!currentUpdate) return { ok: false, message: "no update ready" }
     // Guardrails against the silent-failure patterns that let a stuck install
     // read as "nothing happens" from the user's side.

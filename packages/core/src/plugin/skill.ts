@@ -11,6 +11,7 @@ import { Config } from "../config.js"
 import os from "os"
 import opencodeContent from "./skill/opencode.md" with { type: "text" }
 import reportContent from "./skill/report.md" with { type: "text" }
+import findSkillsContent from "./skill/find-skills.md" with { type: "text" }
 
 export const OpencodeContent = opencodeContent
 export const ReportContent = reportContent
@@ -19,6 +20,8 @@ export const OpencodeDescription =
   "Use this skill for any question about OpenCode itself, including how OpenCode works, using or configuring it, migrating from V1 to V2, troubleshooting it, developing plugins or integrations, using the OpenCode SDK, clients, server, or API, and contributing to the OpenCode codebase. Also use it for OpenCode agents, commands, skills, tools, permissions, MCP servers, providers, models, themes, keybinds, formatters, the CLI, TUI, desktop app, and web app."
 const REPORT_DESCRIPTION =
   "Use when the user wants to report an opencode issue or bug. Collect standard diagnostics, add user-specific reproduction context, and publish the issue with GitHub CLI."
+const FIND_SKILLS_DESCRIPTION =
+  "Discover, install, and apply specialized agent skills for a task. Use for every non-trivial project task where an existing skill or focused workflow could improve the result, and whenever the user asks to find, add, install, or use a skill."
 
 export const Plugin = define({
   id: "opencode.skill",
@@ -41,6 +44,15 @@ export const Plugin = define({
           description: REPORT_DESCRIPTION,
           path: AbsolutePath.make("skill://report/SKILL.md"),
           content: reportContent,
+        }),
+      )
+      editor.add(
+        Skill.Info.make({
+          id: Skill.ID.make("find-skills"),
+          name: Skill.Name.make("Find Skills"),
+          description: FIND_SKILLS_DESCRIPTION,
+          path: AbsolutePath.make("skill://find-skills/SKILL.md"),
+          content: findSkillsContent,
         }),
       )
     })

@@ -1,4 +1,4 @@
-import { KITS, palette, themeKit } from "../../../../app/src/olliecode-themes"
+import { KITS, palette, themeKit } from "../../../../app/src/jetcode-themes"
 
 function variables(id: string) {
   const p = palette(themeKit(id))
@@ -15,6 +15,7 @@ export function licenseAppearance(id: string) {
   const declarations = Object.entries(variables(id)).map(([key, value]) => `--${key}:${value}`).join(";")
   return `<style id="license-palette">:root{${declarations};color-scheme:${themeKit(id).family}}</style><style>
   * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
   html,body { margin:0; min-height:100%; background:var(--bg); color:var(--text); font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; }
   body { padding:24px; }
   .card { width:100%; max-width:520px; margin:auto; padding:26px; background:var(--bg-layer); border:1px solid var(--border); border-radius:20px; box-shadow:0 14px 40px rgb(0 0 0 / .1); }
@@ -41,28 +42,34 @@ export function licenseAppearance(id: string) {
   .days .u { color:var(--muted); font-size:12px; }
   .days .warn { color:var(--warn); } .days .crit { color:var(--danger); }
   .row { display:flex; justify-content:flex-end; align-items:center; flex-wrap:wrap; gap:9px; margin-top:16px; }
+  .labelrow { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-top:12px; }
+  .labelrow label { margin:0 0 8px; }
+  .link { padding:4px 0; border:0; background:transparent; color:var(--accent); font-size:12px; font-weight:600; }
+  .link:hover { color:var(--accent-hover); text-decoration:underline; text-underline-offset:3px; }
+  .key-actions { margin-top:10px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .key-actions button { padding:9px 13px; }
+  .hint { color:var(--muted); font-size:11px; line-height:1.4; }
   .remember { margin:0 auto 0 0; display:flex; gap:7px; align-items:center; font-size:12px; }
   .remember input { accent-color:var(--accent); width:16px; height:16px; }
   button { font-family:inherit; font-size:12px; font-weight:600; padding:11px 16px; border:1px solid var(--border-strong); border-radius:9px; cursor:pointer; background:var(--bg-elev); color:var(--text); }
   button.primary { background:var(--accent); color:var(--on-accent); border-color:transparent; }
   button.primary:hover { background:var(--accent-hover); }
   button.ghost { background:var(--bg); color:var(--text); }
+  button.ghost:hover { border-color:var(--accent); }
   button.danger { margin-inline-end:auto; color:var(--danger); border-color:color-mix(in srgb,var(--danger) 40%,var(--border)); background:transparent; }
   button:focus-visible,a:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
   button:disabled { cursor:wait; opacity:.65; }
   .status { margin-top:16px; min-height:18px; color:var(--muted); font-size:12px; line-height:1.5; overflow-wrap:anywhere; }
   .status.ok { color:var(--ok); } .status.err { color:var(--danger); }
   .inactive { padding:16px; background:var(--bg); color:var(--danger); border:1px solid var(--border); border-radius:12px; font-size:13px; line-height:1.6; overflow-wrap:anywhere; }
-  .buy { margin-top:22px; padding-top:18px; border-top:1px solid var(--border); font-size:12px; color:var(--muted); text-align:center; }
-  .buy a { color:var(--accent); cursor:pointer; text-underline-offset:3px; }
-  @media(max-width:400px) { body { padding:12px; } .card { padding:20px; border-radius:14px; } .eyebrow { display:none; } .grid { grid-template-columns:76px minmax(0,1fr); } button { padding:10px 12px; } }
+  @media(max-width:400px) { body { padding:12px; } .card { padding:20px; border-radius:14px; } .eyebrow { display:none; } .grid { grid-template-columns:76px minmax(0,1fr); } button { padding:10px 12px; } .labelrow { margin-top:10px; } }
   </style>`
 }
 
 // Known palette values only. A theme IPC event cannot inject CSS or markup.
 export function licenseThemeListener() {
   const styles = Object.fromEntries(KITS.map((kit) => [kit.id, licenseAppearance(kit.id).split("</style>")[0]!.split('>')[1]]))
-  return `require('electron').ipcRenderer.on('olliecode:theme-changed', (_event, id) => {
+  return `require('electron').ipcRenderer.on('jetcode:theme-changed', (_event, id) => {
     const styles = ${JSON.stringify(styles)};
     if (styles[id]) document.getElementById('license-palette').textContent = styles[id];
   });`

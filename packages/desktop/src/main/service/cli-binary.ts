@@ -1,4 +1,4 @@
-// olliEcode: locate the bundled opencode-cli[.exe] on disk.
+// jetcode: locate the bundled opencode-cli[.exe] on disk.
 //
 // Lives in its own module because the license gate no longer needs it
 // (the licensing engine moved into Electron main), but desktop-cli.ts
@@ -16,9 +16,9 @@ export function resolveCliBinary(): string {
     process.platform === "win32" ? ["opencode-cli.exe", "opencode.exe"] : ["opencode-cli", "opencode"]
 
   const appPath = app.getAppPath()
-  console.log("[olliecode-cli-binary] app.getAppPath():", appPath)
+  console.log("[jetcode-cli-binary] app.getAppPath():", appPath)
 
-  // olliEcode installer layout: Inno Setup launches Electron with the
+  // jetcode installer layout: Inno Setup launches Electron with the
   // desktop-pkg folder as its app path, and the CLI lives inside
   // <app-path>/resources/<name>. Check this BEFORE process.resourcesPath,
   // because a non-packaged Electron (direct electron.exe) sets
@@ -27,7 +27,7 @@ export function resolveCliBinary(): string {
   for (const n of names) {
     const bundled = path.join(appPath, "resources", n)
     if (existsSync(bundled)) {
-      console.log("[olliecode-cli-binary] CLI found (installer layout):", bundled)
+      console.log("[jetcode-cli-binary] CLI found (installer layout):", bundled)
       return bundled
     }
   }
@@ -38,7 +38,7 @@ export function resolveCliBinary(): string {
     for (const n of names) {
       const packaged = path.join(process.resourcesPath, n)
       if (existsSync(packaged)) {
-        console.log("[olliecode-cli-binary] CLI found (packaged resourcesPath):", packaged)
+        console.log("[jetcode-cli-binary] CLI found (packaged resourcesPath):", packaged)
         return packaged
       }
     }
@@ -68,12 +68,12 @@ export function resolveCliBinary(): string {
     for (const n of names) {
       const c = path.resolve(base, "..", "cli", "dist", archDir, "bin", n)
       if (existsSync(c)) {
-        console.log("[olliecode-cli-binary] CLI found (dev-tree):", c)
+        console.log("[jetcode-cli-binary] CLI found (dev-tree):", c)
         return c
       }
     }
   }
   const fallback = path.join(appPath, "resources", names[0])
-  console.log("[olliecode-cli-binary] all probes missed; falling through to:", fallback)
+  console.log("[jetcode-cli-binary] all probes missed; falling through to:", fallback)
   return fallback
 }

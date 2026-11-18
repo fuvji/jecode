@@ -1,4 +1,4 @@
-// olliEcode anti-debug surface. Called from ensureLicensed + verifyToken on
+// jetcode anti-debug surface. Called from ensureLicensed + verifyToken on
 // every launch. Cheap checks only -- none allocate memory or spawn processes
 // on the hot path, so startup cost stays under 2 ms.
 //
@@ -21,11 +21,11 @@ import inspector from "node:inspector"
 // bare `bun run dev` or CI; release builds carry the real pubkey and all
 // probes fire. Lifting the probes from a release binary means also lifting
 // the baked pubkey, which invalidates every live token.
-declare const OLLIECODE_LICENSE_PUBKEY: string | undefined
+declare const JETCODE_LICENSE_PUBKEY: string | undefined
 const IS_RELEASE_BUILD =
-  typeof OLLIECODE_LICENSE_PUBKEY === "string" &&
-  OLLIECODE_LICENSE_PUBKEY !== "dev-pubkey-replace" &&
-  OLLIECODE_LICENSE_PUBKEY.length > 0
+  typeof JETCODE_LICENSE_PUBKEY === "string" &&
+  JETCODE_LICENSE_PUBKEY !== "dev-pubkey-replace" &&
+  JETCODE_LICENSE_PUBKEY.length > 0
 
 // Timing threshold for the artificial-slowness probe. The baseline for a
 // 1000-iteration BLAKE2b loop on a 2020-vintage laptop is ~200 microseconds;

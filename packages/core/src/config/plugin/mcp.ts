@@ -5,6 +5,7 @@ import { Document, type Entry } from "@opencode/schema/config"
 import type { ServerConfig } from "@opencode/schema/mcp"
 import { Effect, Stream } from "effect"
 import { Config } from "../../config.js"
+import { discoverSystemMcpServers } from "../../mcp/discovery.js"
 import { Mcp } from "../../mcp/index.js"
 
 export const Plugin = define({
@@ -52,6 +53,17 @@ export const register = Effect.fn("ConfigMCPPlugin.register")(function* (
     for (const [name, server] of servers) {
       if (editor.get(name)) continue
       editor.set(name, { ...server, timeout: { ...timeout, ...server.timeout } })
+    }
+
+    // Bring in servers already configured for Claude, Cursor, VS Code,
+    // Windsurf, Continue, and Cline. Config-file entries above win by name;
+    // an explicit `disabled` in the source config is preserved.
+    for (const discovered of discoverSystemMcpServers()) {
+      if (servers.has(discovered.name) || editor.get(discovered.name)) continue
+      editor.set(discovered.name, {
+        ...discovered.config,
+        timeout: { ...timeout, ...discovered.config.timeout },
+      })
     }
   })
 })

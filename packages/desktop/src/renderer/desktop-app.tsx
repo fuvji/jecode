@@ -281,10 +281,10 @@ function DesktopEffects(props: { api: ElectronAPI }) {
     theme.mode()
     // Any theme whose base resolves to transparent owns a per-pixel window.
     // `useTheme()` is the vendor context, so the Clear kit's id carries its
-    // `olliecode-` prefix here.
+    // `jetcode-` prefix here.
     const base = getComputedStyle(document.documentElement).getPropertyValue("--background-base").trim()
     const background =
-      theme.themeId() === "olliecode-clear" || !base || base === "transparent" ? "#00000000" : base
+      theme.themeId() === "jetcode-clear" || !base || base === "transparent" ? "#00000000" : base
 
     if (background) void props.api.setBackgroundColor(background)
   })

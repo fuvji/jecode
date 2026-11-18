@@ -12,12 +12,12 @@
 //   * DevTools is disabled per webContents and re-closed if something opens it.
 //   * The usual DevTools accelerators are swallowed.
 //
-// OLLIECODE_ALLOW_DEVTOOLS=1 keeps everything available for a support session
+// JETCODE_ALLOW_DEVTOOLS=1 keeps everything available for a support session
 // on a packaged build; development builds are untouched.
 import { app, type WebContents } from "electron"
 import path from "node:path"
 
-const allowEnv = "OLLIECODE_ALLOW_DEVTOOLS"
+const allowEnv = "JETCODE_ALLOW_DEVTOOLS"
 
 function allowed() {
   return process.env[allowEnv] === "1"

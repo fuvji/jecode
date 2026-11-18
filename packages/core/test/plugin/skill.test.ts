@@ -53,6 +53,14 @@ describe("SkillPlugin.Plugin", () => {
       )
       expect(report?.content).toContain("- opencode version: 1.2.3")
       expect(report?.content).toContain("- install/channel: beta")
+      expect(skills).toContainEqual(
+        expect.objectContaining({
+          id: "find-skills",
+          name: "Find Skills",
+          path: "skill://find-skills/SKILL.md",
+          description: expect.stringContaining("Discover, install"),
+        }),
+      )
     }),
   )
 

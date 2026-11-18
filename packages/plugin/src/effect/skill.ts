@@ -11,7 +11,7 @@ export interface SkillEditor {
   remove(id: string): void
 }
 
-export interface SkillDomain extends SkillApi<unknown> {
+export interface SkillDomain extends Omit<SkillApi<unknown>, "install"> {
   readonly transform: Transform<SkillEditor>
   readonly reload: () => Effect.Effect<void>
 }

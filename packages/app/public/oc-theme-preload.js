@@ -11,7 +11,7 @@
   // The Clear kit runs in a transparent window; an opaque boot background
   // would hide the desktop behind it until the theme stylesheet catches up.
   document.documentElement.style.backgroundColor =
-    themeId === "olliecode-clear" ? "transparent" : isDark ? "#080808" : "#fafafa"
+    themeId === "jetcode-clear" ? "transparent" : isDark ? "#080808" : "#fafafa"
 
   // Update theme-color meta tag to match app color scheme
   var metas = document.querySelectorAll("meta[name='theme-color']")

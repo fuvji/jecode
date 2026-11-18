@@ -10,7 +10,7 @@ import { usePlatform } from "@/runtime/platform/platform"
 import { useData, useServer } from "@/runtime/server/current"
 import { authTokenFromCredentials } from "@/runtime/server/api"
 import { useUsageFormat } from "./format"
-import { FREE_EDITION } from "@/olliecode-edition"
+import { FREE_EDITION } from "@/jetcode-edition"
 import {
   type BudgetLabel,
   type BudgetNote,
@@ -23,7 +23,7 @@ import {
 } from "./limits"
 import "./dialog.css"
 
-/** The Usage dialog: the location's olliEcode Go allowance and Console budgets, refreshed when it opens. */
+/** The Usage dialog: the location's jetcode Go allowance and Console budgets, refreshed when it opens. */
 export function DialogUsage(props: {
   location: LocationRef
   /** The model in use, so a per-model budget shows this model's counter. */
@@ -349,12 +349,12 @@ function UsageFrame(props: { children: JSX.Element; footer?: JSX.Element }) {
       const conn = server.conn
       if (!("http" in conn) || !conn.http?.url) return
       // ?mode=fast triggers the signed-directive gated launcher path in
-      // olliecode-reset.ts, which spawns shortcuts/olliEcode-Fresh-Desktop
+      // jetcode-reset.ts, which spawns shortcuts/jetcode-Fresh-Desktop
       // (closes the backend + Electron window, rotates egress, relaunches).
       // Without the mode param the handler only zeroes DB counters locally,
       // and the pill does nothing visible. fresh.ps1 pins any pill-initiated
       // run to the deep ritual regardless of fast/fresh.
-      const url = new URL("/_olliecode/reset-limits?mode=fast", conn.http.url)
+      const url = new URL("/_jetcode/reset-limits?mode=fast", conn.http.url)
       const headers: Record<string, string> = { "content-type": "application/json" }
       if (conn.http.password)
         headers.authorization = `Basic ${authTokenFromCredentials({ password: conn.http.password })}`

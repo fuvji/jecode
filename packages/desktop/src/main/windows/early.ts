@@ -72,7 +72,7 @@ const displays = {
   matching: (bounds: Electron.Rectangle) => screen.getDisplayMatching(bounds).bounds,
 }
 
-// olliEcode splash sentinel. The WPF splash (scripts/splash.ps1) previously
+// jetcode splash sentinel. The WPF splash (scripts/splash.ps1) previously
 // polled `Get-Process -Name electron` for a window-title heuristic that drifted
 // every time the first-paint title changed, leaving the splash stuck on screen
 // until its 90s deadline. Writing a flag file the moment the first window shows
@@ -89,7 +89,7 @@ const displays = {
 // shared across every launch; the splash clears a stale one older than ~60s
 // at startup so a previous Electron's write can't false-close the current
 // splash.
-const SPLASH_READY_FLAG = path.join(os.tmpdir(), "olliecode-splash-done.flag")
+const SPLASH_READY_FLAG = path.join(os.tmpdir(), "jetcode-splash-done.flag")
 function writeSplashReadyFlag() {
   try {
     fs.writeFileSync(SPLASH_READY_FLAG, `${process.pid}\n${Date.now()}\n${app.getVersion()}\n`)
@@ -121,7 +121,7 @@ export function createEarlyWindow() {
     height: state.height,
     show: !deferReveal,
     autoHideMenuBar: true,
-    title: "olliEcode",
+    title: "jetcode",
     icon: path.join(icons, `icon.${process.platform === "win32" ? "ico" : "png"}`),
     // The first window is adopted by the full window manager. Transparency
     // must be enabled here at construction; it cannot be added on adoption.
@@ -135,6 +135,9 @@ export function createEarlyWindow() {
       sandbox: true,
       // Same rule as the full window: no inspector on a packaged renderer.
       devTools: devToolsEnabled(),
+      // jetcode: keep timers, rAF and compositing running at full rate while
+      // the window is in the background, matching foreground performance.
+      backgroundThrottling: false,
       // The renderer boots in this window, so it starts at the saved zoom instead of jumping to it later.
       zoomFactor: zoom,
       additionalArguments: windowArguments(id),

@@ -522,6 +522,7 @@ describe("ConfigNormalize", () => {
     const result = normalized({
       compaction: {
         auto: false,
+        token_saver: false,
         preserve_recent_tokens: 1000,
         keep: { tokens: 2000 },
         reserved: 3000,
@@ -530,7 +531,7 @@ describe("ConfigNormalize", () => {
         prune: true,
       },
     })
-    expect(result.encoded.compaction).toEqual({ auto: false, keep: { tokens: 2000 }, buffer: 4000 })
+    expect(result.encoded.compaction).toEqual({ auto: false, token_saver: false, keep: { tokens: 2000 }, buffer: 4000 })
     expect(result.diagnostics.map((item) => [item.kind, item.path])).toEqual([
       ["unsupported", ["compaction", "tail_turns"]],
       ["unsupported", ["compaction", "prune"]],
@@ -538,6 +539,7 @@ describe("ConfigNormalize", () => {
       ["conflict", ["compaction", "buffer"]],
     ])
 
+    expect(normalized({ compaction: { token_saver: true } }).encoded.compaction).toEqual({ token_saver: true })
     expect(normalized({ compaction: { buffer: "12.5%" } }).encoded.compaction).toEqual({ buffer: "12.5%" })
     for (const buffer of ["0%", "100%", "150%"]) {
       const result = normalized({ compaction: { buffer } })

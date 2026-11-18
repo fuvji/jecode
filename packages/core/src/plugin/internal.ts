@@ -101,9 +101,10 @@ import { AgentPlugin } from "./agent.js"
 import BrowserPlugin from "@opencode/plugin-browser"
 import { CommandPlugin } from "./command.js"
 import { IdentityPlugin } from "./identity.js"
-import { OlliecodeAutoAgentsPlugin } from "./olliecode-auto-agents.js"
-import { OlliecodeUASpoofPlugin } from "./olliecode-ua-spoof.js"
-import { OlliecodeAutoRotatePlugin } from "./olliecode-auto-rotate.js"
+import { JetcodeAutoAgentsPlugin } from "./jetcode-auto-agents.js"
+import { JetcodeUASpoofPlugin } from "./jetcode-ua-spoof.js"
+import { JetcodeAutoRotatePlugin } from "./jetcode-auto-rotate.js"
+import { JetcodeTokenSaverPlugin } from "./jetcode-tokensaver.js"
 import { PlanPlugin } from "./plan.js"
 import { GoalPlugin } from "./goal.js"
 import { ModelsDevPlugin } from "./models-dev.js"
@@ -264,10 +265,11 @@ const pre = [
   // Render model prompts after the patch plugin selects the available editing tools.
   ...OptimizePlugin.Plugins,
   VerbosityPlugin.Plugin,
+  JetcodeTokenSaverPlugin.Plugin,
   IdentityPlugin.Plugin,
-  OlliecodeAutoAgentsPlugin.Plugin,
-  OlliecodeUASpoofPlugin.Plugin,
-  OlliecodeAutoRotatePlugin.Plugin,
+  JetcodeAutoAgentsPlugin.Plugin,
+  JetcodeUASpoofPlugin.Plugin,
+  JetcodeAutoRotatePlugin.Plugin,
   EditTool.Plugin,
   GlobTool.Plugin,
   GrepTool.Plugin,

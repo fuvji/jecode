@@ -1,7 +1,9 @@
 import "@/index.css"
-import "@/olliecode-studio.css"
-import { OlliecodeToolbar } from "@/olliecode-toolbar"
-import { OlliecodeThemeProvider } from "@/olliecode-theme-provider"
+import "@/jetcode-studio.css"
+import "@/jetcode-motion.css"
+import { JetcodeToolbar } from "@/jetcode-toolbar"
+import { JetcodeThemeProvider } from "@/jetcode-theme-provider"
+import { JetcodeFxAmbient } from "@/jetcode-fx-ambient"
 import { VoiceProvider } from "@/voice/context"
 import { VoiceOverlay } from "@/voice/composer"
 import { DialogProvider } from "@opencode/ui/context/dialog"
@@ -24,12 +26,12 @@ import { TabsProvider } from "@/shell/tabs/tabs"
 import { ErrorPage } from "@/shell/errors/error"
 import { AppRoutes, File, preloadRoute } from "@/shell/routes/routes"
 import { PluginRoot } from "@/runtime/plugin/root"
-import { OlliecodeResetFab, OlliecodeWebsiteFab } from "@/olliecode-reset-fab"
-import { OlliecodeLicenseFab } from "@/olliecode-license-fab"
-import { OlliecodeUpdateFab } from "@/olliecode-update-fab"
-import { OlliecodeVersionBadge } from "@/olliecode-version-badge"
-import { OlliecodeThemeFab } from "@/olliecode-theme-fab"
-import { FREE_EDITION } from "@/olliecode-edition"
+import { JetcodeResetFab, JetcodeWebsiteFab } from "@/jetcode-reset-fab"
+import { JetcodeLicenseFab } from "@/jetcode-license-fab"
+import { JetcodeUpdateFab } from "@/jetcode-update-fab"
+import { JetcodeVersionBadge } from "@/jetcode-version-badge"
+import { JetcodeThemeFab } from "@/jetcode-theme-fab"
+import { FREE_EDITION } from "@/jetcode-edition"
 
 export { preloadRoute }
 
@@ -66,14 +68,14 @@ export function AppBaseProviders(
 ) {
   return (
     <MetaProvider>
-      <Title>olliEcode</Title>
+      <Title>jetcode</Title>
       <Font />
       <ThemeProvider
         onThemeApplied={(mode, scheme) => {
           props.onThemeApplied?.(mode, scheme)
         }}
       >
-        <OlliecodeThemeProvider />
+        <JetcodeThemeProvider />
         <LanguageProvider locale={props.locale} onNativeTranslations={props.onNativeTranslations}>
           <UiI18nBridge>
             <ErrorBoundary
@@ -118,14 +120,15 @@ export function AppInterface(props: {
               {props.children}
               {rootProps.children}
               <VoiceOverlay />
-              <OlliecodeToolbar>
-                {FREE_EDITION ? null : <OlliecodeResetFab />}
-                <OlliecodeWebsiteFab />
-                {FREE_EDITION ? null : <OlliecodeLicenseFab />}
-                <OlliecodeThemeFab />
-                <OlliecodeUpdateFab />
-              </OlliecodeToolbar>
-              <OlliecodeVersionBadge />
+              <JetcodeToolbar>
+                {FREE_EDITION ? null : <JetcodeResetFab />}
+                <JetcodeWebsiteFab />
+                {FREE_EDITION ? null : <JetcodeLicenseFab />}
+                <JetcodeThemeFab />
+                <JetcodeUpdateFab />
+              </JetcodeToolbar>
+              <JetcodeFxAmbient />
+              <JetcodeVersionBadge />
             </VoiceProvider>
           </CommandProvider>
         </ProjectIconsProvider>

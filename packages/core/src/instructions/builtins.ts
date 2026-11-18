@@ -51,6 +51,17 @@ const layer = Layer.effect(
                   ["The environment you are running in is now:", environment].join("\n"),
               },
             }),
+            Instructions.make({
+              key: Instructions.Key.make("core/working-loop"),
+              codec: Schema.toCodecJson(Schema.String),
+              read: Effect.succeed(
+                "Work in verified loops: make the smallest coherent change, run the relevant check, fix the cause of any failure, and repeat until the requested behavior is verified. Do not stop at a partial fix or an unverified claim. For every non-trivial task, check the available skills and use the find-skills skill to install and apply a matching workflow; skip that lookup only for trivial edits, to save tokens.",
+              ),
+              render: {
+                initial: (guidance) => guidance,
+                changed: (_previous, guidance) => guidance,
+              },
+            }),
           ]),
         ),
     })

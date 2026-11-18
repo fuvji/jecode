@@ -546,10 +546,10 @@ const Root = Spec.make(typeof OPENCODE_CLI_NAME === "string" ? OPENCODE_CLI_NAME
       globalFlags: ServerFlags,
     }),
     Spec.make("license", {
-      description: "Manage the olliEcode license",
+      description: "Manage the jetcode license",
       commands: [
         Spec.make("activate", {
-          description: "Activate olliEcode on this machine with a purchased key",
+          description: "Activate jetcode on this machine with a purchased key",
           params: {
             key: Argument.String("key").pipe(Argument.withDescription("License key from the purchase email")),
             email: Flag.String("email").pipe(

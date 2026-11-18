@@ -16,8 +16,8 @@ function modelKey(model: ModelKey) {
   return `${model.providerID}:${model.modelID}`
 }
 
-export const isFreeModel = (model: { provider: { id: string }; cost?: { input: number } }) =>
-  model.provider.id === "opencode" && (!model.cost || model.cost.input === 0)
+export const isFreeModel = (model: { provider: { id: string }; cost?: { input?: number } }) =>
+  model.provider.id === "opencode" && (!model.cost || (model.cost.input ?? 0) === 0)
 
 // The newest release of each family per provider. A free model shares its family and release date with its paid twin,
 // so the two are grouped apart. A tie keeps the first model listed.
@@ -31,6 +31,42 @@ export function latestModels<T extends { id: string; provider: { id: string }; f
       return { modelID: first.id, providerID: first.provider.id }
     }),
   )
+}
+
+type RankableModel = {
+  id: string
+  name?: string
+  provider: { id: string }
+  release_date?: string
+  cost?: { input?: number }
+  limit?: { context?: number }
+  capabilities?: { toolcall?: boolean; input?: { text?: boolean }; output?: { text?: boolean } }
+}
+
+/**
+ * Best default model when the user has not chosen one: tool-capable, free when
+ * possible, recent, large-context, and never the most expensive option just
+ * because it happened to be first in the catalog.
+ */
+export function rankModels<T extends RankableModel>(models: T[]) {
+  const score = (model: T) => {
+    let value = 0
+    if (model.capabilities?.toolcall) value += 10_000
+    if (model.capabilities?.input?.text !== false && model.capabilities?.output?.text !== false) value += 500
+    if (isFreeModel(model)) value += 2_500
+    if (model.provider.id === "ollama" || model.provider.id === "lmstudio") value += 900
+    if (/coder|code|devstral|qwen3|gpt-oss|deepseek|claude|gemini|gpt-5/i.test(model.name ?? model.id)) value += 400
+    const released = Date.parse(model.release_date ?? "")
+    if (Number.isFinite(released)) {
+      const age = Math.max(0, Date.now() - released)
+      value += Math.max(0, 900 - age / (24 * 60 * 60 * 1000) * 2)
+    }
+    value += Math.min((model.limit?.context ?? 0) / 1024, 512)
+    value -= Math.min(model.cost?.input ?? 0, 100) * 5
+    return value
+  }
+
+  return models.toSorted((left, right) => score(right) - score(left))
 }
 
 export function uniqueModels(models: ModelKey[]) {

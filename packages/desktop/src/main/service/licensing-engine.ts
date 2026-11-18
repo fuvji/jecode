@@ -6,7 +6,7 @@ import path from "node:path"
 import tls from "node:tls"
 import { app } from "electron"
 
-// olliEcode licensing engine — Node-native port of overlay/packages/cli/src/
+// jetcode licensing engine — Node-native port of overlay/packages/cli/src/
 // services/licensing.ts. Runs in the Electron main process so the dialog
 // talks straight to this module via IPC instead of shelling out to
 // `opencode-cli license activate <key>` per keystroke. The HWID formula,
@@ -23,12 +23,12 @@ import { app } from "electron"
 
 const DEFAULT_API_FALLBACK = "https://license.example.com"
 const CACHE_FILENAME = "license.json"
-const USER_AGENT = "olliecode-electron"
+const USER_AGENT = "jetcode-electron"
 const GATEWAY_FILENAME = "gateway.json"
 
 // Resolve the license server origin at import time. Order of precedence:
 //
-//   1. OLLIECODE_LICENSE_API env (dev / staging override)
+//   1. JETCODE_LICENSE_API env (dev / staging override)
 //   2. gateway.json next to the main bundle, if the integrity-manifest
 //      listed it (the file is signed, so changing it after install is a
 //      silent app.quit() from the bootstrap)
@@ -39,12 +39,17 @@ const GATEWAY_FILENAME = "gateway.json"
 // file's contents are covered by the integrity manifest, so this is
 // configuration, not a trust boundary.
 function resolveDefaultApi(): string {
-  const envOverride = process.env.OLLIECODE_LICENSE_API
+  const envOverride = process.env.JETCODE_LICENSE_API
   if (envOverride && /^https:\/\//.test(envOverride)) return envOverride
   try {
-    // __dirname at build is out/main/service; gateway.json lives at pkg root.
-    const gatewayPath = path.join(app.getAppPath(), GATEWAY_FILENAME)
-    if (fs.existsSync(gatewayPath)) {
+    // Packaged builds keep gateway.json beside the bundled CLI in resources/.
+    // Dev builds keep it at the package root next to app.asar.
+    const candidates = [
+      process.resourcesPath ? path.join(process.resourcesPath, GATEWAY_FILENAME) : "",
+      path.join(app.getAppPath(), GATEWAY_FILENAME),
+    ].filter(Boolean)
+    for (const gatewayPath of candidates) {
+      if (!fs.existsSync(gatewayPath)) continue
       const raw = fs.readFileSync(gatewayPath, "utf8")
       const parsed = JSON.parse(raw) as { origin?: unknown }
       if (typeof parsed.origin === "string" && /^https:\/\/[^/?#\s]+\/?$/.test(parsed.origin)) {
@@ -56,29 +61,32 @@ function resolveDefaultApi(): string {
   }
   return DEFAULT_API_FALLBACK
 }
+// Exported for the sidecar launcher: the staged CLI lives under AppData, away
+// from resources/gateway.json, so it needs this origin in its environment.
+export const resolveLicenseApi = resolveDefaultApi
 const DEFAULT_API = resolveDefaultApi()
 
 // Ed25519 public key injected at build time via electron.vite.config.ts's
 // `main.define` block. Base64-encoded SPKI PEM. Falls back to the dev
 // sentinel so a plain `electron-vite build` without the define still
 // produces a working binary — one that cannot verify prod-signed tokens.
-declare const OLLIECODE_LICENSE_PUBKEY: string | undefined
+declare const JETCODE_LICENSE_PUBKEY: string | undefined
 const EMBEDDED_PUBKEY =
-  (typeof OLLIECODE_LICENSE_PUBKEY === "string" && OLLIECODE_LICENSE_PUBKEY) || "dev-pubkey-replace"
+  (typeof JETCODE_LICENSE_PUBKEY === "string" && JETCODE_LICENSE_PUBKEY) || "dev-pubkey-replace"
 
 // Mirror of the CLI's cache-salt define. Must match byte-for-byte so a
 // cache file written by one artifact decrypts in the other on the same
 // HWID (the CLI sidecar activates, the Electron engine reads; both share
 // $XDG_DATA_HOME/opencode/license.json).
-declare const OLLIECODE_CACHE_SALT: string | undefined
+declare const JETCODE_CACHE_SALT: string | undefined
 const CACHE_SALT =
-  (typeof OLLIECODE_CACHE_SALT === "string" && OLLIECODE_CACHE_SALT) || "dev-cache-salt-replace"
+  (typeof JETCODE_CACHE_SALT === "string" && JETCODE_CACHE_SALT) || "dev-cache-salt-replace"
 const CACHE_MAGIC = Buffer.from("OLEC1")
 
-function deriveCacheKey(hwid: string): Buffer {
+function deriveCacheKey(hwid: string, info = "jetcode-cache-v1"): Buffer {
   const ikm = Buffer.from(hwid, "utf8")
   const salt = Buffer.from(CACHE_SALT, "utf8")
-  return Buffer.from(crypto.hkdfSync("sha256", ikm, salt, Buffer.from("olliecode-cache-v1"), 32))
+  return Buffer.from(crypto.hkdfSync("sha256", ikm, salt, Buffer.from(info), 32))
 }
 
 function encryptCache(c: Cached, hwid: string): Buffer {
@@ -91,7 +99,7 @@ function encryptCache(c: Cached, hwid: string): Buffer {
   return Buffer.concat([CACHE_MAGIC, Buffer.from([1]), iv, tag, ct])
 }
 
-function decryptCache(buf: Buffer, hwid: string): Cached | undefined {
+function decryptCache(buf: Buffer, hwid: string, info = "jetcode-cache-v1"): Cached | undefined {
   try {
     if (buf.length < 5 + 1 + 12 + 16) return undefined
     if (buf.compare(CACHE_MAGIC, 0, 5, 0, 5) !== 0) return undefined
@@ -100,7 +108,7 @@ function decryptCache(buf: Buffer, hwid: string): Cached | undefined {
     const iv = buf.subarray(6, 18)
     const tag = buf.subarray(18, 34)
     const ct = buf.subarray(34)
-    const key = deriveCacheKey(hwid)
+    const key = deriveCacheKey(hwid, info)
     const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv)
     decipher.setAuthTag(tag)
     const pt = Buffer.concat([decipher.update(ct), decipher.final()])
@@ -113,6 +121,8 @@ function decryptCache(buf: Buffer, hwid: string): Cached | undefined {
 const ACCEPTED_PINS: ReadonlySet<string> = new Set([
   "/E2cKMmfCluBe5uiOkieUIqGnCbFVWbKV4MYbq+dLhA=",
   "kIdp6NNEd8wsugYyyIYFsi1ylMCED3hZbSR8ZFsa/A4=",
+  // jetcode free-tier preview license Worker.
+  "RJZX84jaUQLNmvGj9jukzD9IdlnnJAxf5XC6erSMYyc=",
 ])
 
 export class LicenseError extends Error {
@@ -128,7 +138,7 @@ export interface Cached {
   readonly hwid: string
   readonly tier: string
   readonly expires_at: number
-  // olliEcode email-at-activate (optional). Mirror of the CLI's Cached shape.
+  // jetcode email-at-activate (optional). Mirror of the CLI's Cached shape.
   readonly email?: string
 }
 
@@ -358,7 +368,7 @@ export class LicensingEngine {
     this.cachePath =
       opts.cachePath ??
       path.join(process.env.XDG_DATA_HOME || path.join(os.homedir(), ".local", "share"), "opencode", CACHE_FILENAME)
-    this.apiBase = opts.apiBase ?? process.env.OLLIECODE_LICENSE_API ?? DEFAULT_API
+    this.apiBase = opts.apiBase ?? process.env.JETCODE_LICENSE_API ?? DEFAULT_API
   }
 
   hwid(): string {
@@ -372,7 +382,18 @@ export class LicensingEngine {
       if (raw.length > 0 && raw[0] === 0x7b /* '{' */) {
         return JSON.parse(raw.toString("utf8")) as Cached
       }
-      return decryptCache(raw, this.hwid())
+      const hwid = this.hwid()
+      const current = decryptCache(raw, hwid)
+      if (current) return current
+      // Compatibility with licenses activated before the olliecode → jetcode
+      // rename changed the HKDF info string. Migrate to the new binding.
+      const legacy = decryptCache(raw, hwid, "olliecode-cache-v1")
+      if (legacy) {
+        try {
+          this.save(legacy)
+        } catch {}
+      }
+      return legacy
     } catch {
       // Treat corrupt cache as inactive instead of throwing — Electron
       // boot would otherwise die on first run with a bad file left over.
@@ -411,6 +432,25 @@ export class LicensingEngine {
       email: normalizedEmail,
     })
     return { tier: resp.tier ?? "standard", expires_at: resp.expires_at ?? 0 }
+  }
+
+  /**
+   * Ask the licensing service to issue a free-tier key for this machine.
+   * This is intentionally server-authoritative: the client never generates,
+   * derives, or caches a key. The returned key still goes through the normal
+   * /api/activate path, so revocation, HWID binding, expiry, and tier checks
+   * remain in force.
+   */
+  async requestFreeKey(email: string): Promise<{ key: string }> {
+    const normalizedEmail = email.trim().toLowerCase()
+    const hwid = this.hwid()
+    const resp = await pinnedPostJson<{
+      ok: boolean
+      key?: string
+      error?: string
+    }>(`${this.apiBase}/api/free-key`, { email: normalizedEmail, hwid })
+    if (!resp.ok || !resp.key) throw new LicenseError(resp.error ?? "free key unavailable")
+    return { key: resp.key }
   }
 
   async deactivate(): Promise<void> {
@@ -474,7 +514,7 @@ export class LicensingEngine {
     const cached = this.load()
     if (!cached) {
       throw new LicenseError(
-        "olliEcode is not activated on this machine. Enter a key in the dialog or run: olliecode license activate <KEY>",
+        "jetcode is not activated on this machine. Enter a key in the dialog or run: jetcode license activate <KEY>",
       )
     }
     const hwid = this.hwid()

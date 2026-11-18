@@ -40,6 +40,20 @@ export const PluginGroup = HttpApiGroup.make("server.plugin")
       ),
   )
   .add(
+    HttpApiEndpoint.put("plugin.install", "/api/plugin/install", {
+      payload: Schema.Struct({ package: Schema.String }),
+      success: HttpApiSchema.NoContent,
+      error: [InvalidRequestError, ServiceUnavailableError],
+    }).annotateMerge(
+      OpenApi.annotations({
+        identifier: "plugin.install",
+        summary: "Install plugin package",
+        description:
+          "Add a plugin package to the highest-precedence global config and let the server install and activate it.",
+      }),
+    ),
+  )
+  .add(
     HttpApiEndpoint.post("plugin.check", "/api/plugin/check", {
       query: LocationQuery,
       payload: Schema.Struct({ target: Schema.String.pipe(Schema.optional) }),

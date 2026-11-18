@@ -15,6 +15,10 @@ export type Percent = typeof Percent.Type
 
 export class Info extends Schema.Class<Info>("Config.Compaction")({
   auto: Schema.Boolean.pipe(optional),
+  token_saver: Schema.Boolean.pipe(optional).annotate({
+    description:
+      "Append jetcode's token-saving guidance to the primary and compaction prompts, and apply its compact-tail preset. Defaults to true; set false to opt out.",
+  }),
   keep: Keep.pipe(optional),
   buffer: Schema.Union([Percent, NonNegativeInt]).pipe(optional).annotate({
     description:

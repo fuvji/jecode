@@ -4,7 +4,7 @@ import { execFile, spawn } from "node:child_process"
 import { existsSync, readFileSync } from "node:fs"
 import { promisify } from "node:util"
 import { app } from "electron"
-import { Context, Effect, FileSystem, Layer, Option, Path, Schema } from "effect"
+import { Context, Effect, FileSystem, Layer, Option, Path, Schedule, Schema } from "effect"
 import installer from "../../../../../install?raw"
 import { DesktopPaths } from "../paths"
 import { BUNDLED_CLI_VERSION_KEY } from "../storage/keys"
@@ -46,7 +46,11 @@ export const layer = Layer.effect(
 
       if (!cli.binary) return yield* Effect.fail(new Error("Bundled CLI executable is unavailable"))
       const home = app.getPath("home")
-      yield* runInstaller(cli.binary, home)
+      // The installer is idempotent. A Gatekeeper scan, a locked binary or a
+      // short filesystem hiccup should not force the user to press Install again.
+      yield* runInstaller(cli.binary, home).pipe(
+        Effect.retry({ times: 2, schedule: Schedule.exponential("500 millis") }),
+      )
 
       return path.join(home, ".opencode", "bin", "opencode")
     })

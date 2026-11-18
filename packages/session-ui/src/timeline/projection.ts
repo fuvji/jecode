@@ -746,7 +746,7 @@ function stepEvent(
   }
 }
 
-// olliEcode reroutes an opencode.ai free-limit 429 through the provider fallback, so a stored
+// jetcode reroutes an opencode.ai free-limit 429 through the provider fallback, so a stored
 // `provider.free-limit` step is a historical attempt that no longer blocks. Rendering it keeps
 // telling the user they are out of messages after the fallback has already answered.
 function reroutedFreeLimit(error: TurnErrorInfo) {

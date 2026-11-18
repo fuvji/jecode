@@ -18,6 +18,7 @@ import { testEffect } from "../lib/effect"
 import { host } from "./host"
 import PROMPT_INITIALIZE from "../../src/plugin/command/initialize.txt"
 import PROMPT_REVIEW from "../../src/plugin/command/review.txt"
+import PROMPT_LOOPS from "../../src/plugin/command/loops.txt"
 
 const directory = AbsolutePath.make("/repo/packages/app")
 const project = AbsolutePath.make("/repo")
@@ -78,6 +79,10 @@ describe("CommandPlugin.Plugin", () => {
         name: "review",
         description: "review changes [commit|branch|pr], defaults to uncommitted",
       })
+      expect(yield* command.get("loops")).toMatchObject({
+        name: "loops",
+        description: "work continuously in verified build-fix loops until complete",
+      })
       yield* command.execute({
         name: "init",
         invocation: {
@@ -110,6 +115,14 @@ describe("CommandPlugin.Plugin", () => {
           delivery: "steer",
         },
       })
+      yield* command.execute({
+        name: "loops",
+        invocation: {
+          sessionID: Session.ID.make("ses_test"),
+          prompt: { text: "ship the feature" },
+          delivery: "steer",
+        },
+      })
       expect(prompts).toEqual([
         {
           text: PROMPT_INITIALIZE.replace("${path}", project).replaceAll("$ARGUMENTS", "extra context"),
@@ -128,6 +141,11 @@ describe("CommandPlugin.Plugin", () => {
         },
         {
           text: PROMPT_REVIEW.replace("${path}", project).replaceAll("$ARGUMENTS", ""),
+          files: undefined,
+          delivery: "steer",
+        },
+        {
+          text: PROMPT_LOOPS.replaceAll("$ARGUMENTS", "ship the feature"),
           files: undefined,
           delivery: "steer",
         },

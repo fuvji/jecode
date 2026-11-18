@@ -1,5 +1,5 @@
 import { licenseAppearance, licenseBackground, licenseThemeListener } from "./license-appearance"
-// olliEcode license gate for the desktop app.
+// jetcode license gate for the desktop app.
 //
 // Runs once on app.whenReady(), before startSidecarProbe. If the local
 // license.json verifies, resolves and the desktop boots. Otherwise opens
@@ -15,7 +15,7 @@ import { licenseAppearance, licenseBackground, licenseThemeListener } from "./li
 // now ported into Electron main (see ./licensing-engine.ts); the dialog
 // talks to it directly over IPC, no spawn.
 //
-// The CLI's own `olliecode license activate` subcommand still exists for
+// The CLI's own `jetcode license activate` subcommand still exists for
 // terminal users; it reads/writes the SAME license.json this engine does,
 // so a key activated here works for the CLI sidecar and vice-versa.
 
@@ -32,14 +32,14 @@ import { LicensingEngine } from "./licensing-engine"
 // Release-build log gate. In a dev / non-release artifact the gate's internals
 // stay printable (developer context). In a release build every console.log in
 // this module collapses to a no-op so a reverser running strings/ProcMon
-// against the installed Electron process cannot grep for "[olliecode-license-
+// against the installed Electron process cannot grep for "[jetcode-license-
 // gate]" or any of the prefixes that name the activation flow, IPC channels,
 // or dialog states. Gated on the baked pubkey sentinel (same signal the
 // engine uses to tell release apart from dev).
 function noopLog(..._args: unknown[]): void {}
 
 // Directive cross-check on boot. The Reset-pill flow spawns us with the
-// signed directive token in OLLIECODE_DIRECTIVE_TOKEN. We re-verify the
+// signed directive token in JETCODE_DIRECTIVE_TOKEN. We re-verify the
 // Ed25519 signature here against the baked pubkey, confirm the k_prefix
 // binds to the loaded licence, and confirm the nonce appears in the
 // launcher's consumed-nonces ledger (proof the launcher actually ran its
@@ -54,9 +54,9 @@ function noopLog(..._args: unknown[]): void {}
 // timing fragility -- a reverser who fabricates a token also needs to have
 // walked the launcher's Test-DirectiveValid + Record-Nonce path, which
 // requires the Ed25519 verify to have passed in the first place.
-declare const OLLIECODE_LICENSE_PUBKEY: string | undefined
+declare const JETCODE_LICENSE_PUBKEY: string | undefined
 const GATE_PUBKEY =
-  (typeof OLLIECODE_LICENSE_PUBKEY === "string" && OLLIECODE_LICENSE_PUBKEY) || "dev-pubkey-replace"
+  (typeof JETCODE_LICENSE_PUBKEY === "string" && JETCODE_LICENSE_PUBKEY) || "dev-pubkey-replace"
 const GATE_IS_RELEASE = GATE_PUBKEY !== "dev-pubkey-replace" && GATE_PUBKEY.length > 0
 
 // Release builds get the no-op logger; dev keeps console.log. Reassigned once
@@ -72,7 +72,7 @@ function checkDirectiveEnv(): void {
   // Dev builds skip the whole check -- there is no real pubkey to verify
   // against and the env token is likely absent anyway.
   if (!GATE_IS_RELEASE) return
-  const token = process.env.OLLIECODE_DIRECTIVE_TOKEN
+  const token = process.env.JETCODE_DIRECTIVE_TOKEN
   if (!token) return // cold-boot path, not a Reset-driven launch
   try {
     const dot = token.indexOf(".")
@@ -113,7 +113,7 @@ function checkDirectiveEnv(): void {
     }
     if (!found) throw new Error("nonce not in ledger")
   } catch (e) {
-    LOG("[olliecode-license-gate] directive env check failed:", (e as Error).message)
+    LOG("[jetcode-license-gate] directive env check failed:", (e as Error).message)
     app.quit()
     throw e
   }
@@ -121,78 +121,6 @@ function checkDirectiveEnv(): void {
 // Silence unused-import warnings for libs we only reference inside
 // checkDirectiveEnv's try body via type inference from node:crypto.
 void tls; void https
-
-const BUY_URL_FALLBACK = "https://buy.stripe.com/bJe7sKfHPf2i4zvg6Xds407"
-const DISPLAY_PRICE_FALLBACK = "2.99"
-const DISPLAY_CURRENCY_FALLBACK = "$"
-// Resolve the same gateway the engine uses so an install flipped to a new
-// Worker via gateway.json also reads its display config from that Worker,
-// rather than silently hitting the old baked default.
-function resolveGatewayOrigin(): string {
-  const envOverride = process.env.OLLIECODE_LICENSE_API
-  if (envOverride && /^https:\/\//.test(envOverride)) return envOverride
-  try {
-    const gatewayPath = path.join(app.getAppPath(), "gateway.json")
-    if (fs.existsSync(gatewayPath)) {
-      const parsed = JSON.parse(fs.readFileSync(gatewayPath, "utf8")) as { origin?: unknown }
-      if (typeof parsed.origin === "string" && /^https:\/\/[^/?#\s]+\/?$/.test(parsed.origin)) {
-        return parsed.origin.replace(/\/$/, "")
-      }
-    }
-  } catch {
-    /* fall through */
-  }
-  return "https://license.example.com"
-}
-const DISPLAY_CONFIG_URL = resolveGatewayOrigin() + "/api/display-config"
-
-type DisplayConfig = {
-  price: string
-  currency: string
-  buyUrl: string
-}
-
-// Current, mutable copy. Loaded at first dialog open via fetchDisplayConfig;
-// every subsequent open uses the live value if the fetch succeeded.
-const displayConfig: DisplayConfig = {
-  price: DISPLAY_PRICE_FALLBACK,
-  currency: DISPLAY_CURRENCY_FALLBACK,
-  buyUrl: BUY_URL_FALLBACK,
-}
-
-// Fire-and-forget. Public endpoint, no auth, no HWID — the first-run dialog
-// opens before the user is activated, so there is no cached license to bind
-// against. 500ms timeout so a slow/dead Worker never delays the dialog; on
-// timeout or error the dialog renders with the fallback values and the
-// operator can edit them live on the next publish.
-async function fetchDisplayConfig(): Promise<void> {
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), 500)
-  try {
-    const resp = await fetch(DISPLAY_CONFIG_URL, { signal: controller.signal })
-    if (!resp.ok) return
-    const body = (await resp.json()) as {
-      ok?: boolean
-      display_price?: string
-      display_currency?: string
-      buy_url?: string
-    }
-    if (!body?.ok) return
-    if (typeof body.display_price === "string" && body.display_price.length > 0 && body.display_price.length < 32) {
-      displayConfig.price = body.display_price
-    }
-    if (typeof body.display_currency === "string" && body.display_currency.length > 0 && body.display_currency.length < 8) {
-      displayConfig.currency = body.display_currency
-    }
-    if (typeof body.buy_url === "string" && /^https:\/\//.test(body.buy_url) && body.buy_url.length < 512) {
-      displayConfig.buyUrl = body.buy_url
-    }
-  } catch {
-    /* silent — fallbacks already in place */
-  } finally {
-    clearTimeout(timer)
-  }
-}
 
 // Kept exported for existing callers that still want the CLI binary path
 // (desktop-cli.ts resolves it independently; this re-export just keeps
@@ -227,88 +155,170 @@ function dialogHtml(): string {
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline';" />
-<title>olliEcode — License</title>
+<title>jetcode — License</title>
 ${licenseAppearance(licenseThemeId())}
 </head>
 <body>
 <div class="card">
-  <div class="brand"><span class="brand-mark" aria-hidden="true">oE</span><span>olliEcode</span><span class="eyebrow">Workspace access</span></div>
+  <div class="brand"><span class="brand-mark" aria-hidden="true">jC</span><span>jetcode</span><span class="eyebrow">Workspace access</span></div>
   <h1>Enter license key</h1>
-  <p class="sub">One key per machine. Length depends on the key you were issued.</p>
+  <p class="sub">One key per machine. Get a free key for this machine, or paste a key you already have.</p>
   <label for="email">Email</label>
   <input id="email" type="email" autocomplete="email" spellcheck="false" placeholder="the email your key was issued to" />
-  <label for="key" style="margin-top:12px;">License key</label>
+  <div class="labelrow"><label for="key" style="margin-top:12px;">License key</label><button id="paste" class="link" type="button">Paste key</button></div>
   <input id="key" type="text" autocomplete="off" spellcheck="false" placeholder="paste your key" />
+  <div class="key-actions">
+    <button id="getkey" class="ghost" type="button">Get a free key</button>
+    <span id="keyhint" class="hint">Requests a key for this machine and activates it.</span>
+  </div>
   <div class="row">
     <label class="remember"><input id="remember" type="checkbox" checked /> Remember me</label>
     <button id="go" class="primary">Activate</button>
   </div>
   <div id="status" class="status" role="status" aria-live="polite"></div>
-  <div class="buy">Don't have one? <a id="buy" role="button" tabindex="0">Buy for __OLLIE_PRICE__ →</a></div>
 </div>
 <script>
-  const { ipcRenderer } = require('electron')
+  const { ipcRenderer, clipboard } = require('electron')
   ${licenseThemeListener()}
   const emailInput = document.getElementById('email')
   const input = document.getElementById('key')
   const btn = document.getElementById('go')
+  const getkey = document.getElementById('getkey')
+  const paste = document.getElementById('paste')
   const status = document.getElementById('status')
-  const buy = document.getElementById('buy')
   const remember = document.getElementById('remember')
 
+  const normaliseKey = (value) => {
+    // Keep variable-length keys intact. Grouping is cosmetic: the server is
+    // still the authority on whether the key was issued and is redeemable.
+    const raw = String(value || '').toUpperCase().replace(/[^0-9A-Z]/g, '')
+    return (raw.match(/.{1,5}/g) || []).join('-')
+  }
+
+  const validEmail = (value) => {
+    const at = value.lastIndexOf('@')
+    return at > 0 && at === value.indexOf('@') && at < value.length - 3 && value.slice(at + 1).includes('.')
+  }
+
+  const setStatus = (message, kind) => {
+    status.className = 'status' + (kind ? ' ' + kind : '')
+    status.textContent = message
+  }
+
+  const setBusy = (busy, message) => {
+    btn.disabled = busy
+    getkey.disabled = busy
+    paste.disabled = busy
+    btn.setAttribute('aria-busy', busy ? 'true' : 'false')
+    if (message) setStatus(message)
+  }
+
+  const fieldError = (field, message) => {
+    if (field === 'email') {
+      emailInput.classList.add('error')
+      emailInput.setAttribute('aria-invalid', 'true')
+      emailInput.focus()
+    } else {
+      input.classList.add('error')
+      input.setAttribute('aria-invalid', 'true')
+      input.focus()
+    }
+    setStatus(message, 'err')
+  }
+
+  const validateKey = (key, email) => {
+    const raw = key.replace(/-/g, '')
+    if (!raw) return { field: 'key', message: 'Enter your license key to continue.' }
+    if (raw.length < 10) return { field: 'key', message: 'That key looks too short. Paste the full key from your email.' }
+    if (raw.length > 128) return { field: 'key', message: 'That key looks too long. Paste only the license key.' }
+    if (email && !validEmail(email)) return { field: 'email', message: 'Enter a valid email address, or leave it blank.' }
+    return null
+  }
+
+  const activate = async (key, email) => {
+    setBusy(true, 'Activating…')
+    const r = await ipcRenderer.invoke('jetcode:license-activate', { key, email, remember: remember.checked }).catch(() => ({ ok: false, message: 'Unable to reach the licensing service. Check your connection and try again.' }))
+    if (r && r.ok) {
+      setStatus(r.message || 'Activated. Opening jetcode…', 'ok')
+      return true
+    }
+    setBusy(false)
+    const msg = (r && r.message) || 'Activation failed. Please try again.'
+    if (/email/i.test(msg)) fieldError('email', msg)
+    else if (/key|licen[cs]e|machine|activation|unknown|expired|revoked/i.test(msg)) fieldError('key', msg)
+    else setStatus(msg, 'err')
+    return false
+  }
+
   input.addEventListener('input', () => {
-    // Normalise but do NOT truncate. Keys issued against this product are
-    // variable length and the HKDF / Ed25519 verify path treats any
-    // uppercase-alphanumeric string as valid input — the server rejects
-    // the activation if the string doesn't match an issued key, which is
-    // the right boundary to enforce length. Auto-group hyphens every 5
-    // chars so a 25-char key still reads cleanly as XXXXX-XXXXX-... and a
-    // 32-char key reads as XXXXX-XXXXX-XXXXX-XXXXX-XXXXX-XX.
-    const raw = input.value.toUpperCase().replace(/[^0-9A-Z]/g, '')
-    const groups = raw.match(/.{1,5}/g) || []
-    input.value = groups.join('-')
+    input.value = normaliseKey(input.value)
     input.classList.remove('error')
-    status.textContent = ''
+    input.removeAttribute('aria-invalid')
+    setStatus('')
   })
 
   emailInput.addEventListener('input', () => {
     emailInput.classList.remove('error')
-    status.textContent = ''
+    emailInput.removeAttribute('aria-invalid')
+    setStatus('')
   })
 
-  const trySubmit = (e) => { if (e.key === 'Enter') btn.click() }
+  const trySubmit = (e) => {
+    if (e.key !== 'Enter' || btn.disabled) return
+    e.preventDefault()
+    btn.click()
+  }
   input.addEventListener('keydown', trySubmit)
   emailInput.addEventListener('keydown', trySubmit)
 
   btn.addEventListener('click', async () => {
-    const key = input.value.trim()
+    const key = normaliseKey(input.value)
+    input.value = key
     const email = emailInput.value.trim()
-    if (!key) { input.focus(); return }
-    btn.disabled = true
-    status.className = 'status'
-    status.textContent = 'Activating...'
-    const r = await ipcRenderer.invoke('olliecode:license-activate', { key, email, remember: remember.checked }).catch(() => ({ ok: false, message: 'Unable to reach the licensing service. Please try again.' }))
-    if (r && r.ok) {
-      status.className = 'status ok'
-      status.textContent = r.message || 'activated'
-    } else {
-      const msg = (r && r.message) || 'activation failed'
-      // email-related failures should highlight the email field; everything else the key field.
-      if (/email/i.test(msg)) {
-        emailInput.classList.add('error')
-        emailInput.focus()
-      } else {
-        input.classList.add('error')
-        input.focus()
-      }
-      status.className = 'status err'
-      status.textContent = msg
-      btn.disabled = false
-    }
+    const problem = validateKey(key, email)
+    if (problem) { fieldError(problem.field, problem.message); return }
+    await activate(key, email)
   })
 
-  buy.addEventListener('click', () => ipcRenderer.invoke('olliecode:license-buy'))
-  buy.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); buy.click() } })
+  paste.addEventListener('click', async () => {
+    let text = ''
+    try { text = clipboard.readText() } catch {}
+    if (!text) {
+      try { text = await navigator.clipboard.readText() } catch {}
+    }
+    const match = String(text || '').toUpperCase().match(/[0-9A-Z]{5}(?:-[0-9A-Z]{5}){1,}|[0-9A-Z]{10,}/)
+    if (!match) {
+      setStatus('The clipboard does not contain a license key.', 'err')
+      input.focus()
+      return
+    }
+    input.value = normaliseKey(match[0])
+    input.classList.remove('error')
+    input.removeAttribute('aria-invalid')
+    setStatus('Key pasted. Review it, then activate.', 'ok')
+    input.focus()
+  })
+
+  getkey.addEventListener('click', async () => {
+    const email = emailInput.value.trim()
+    if (!email) { fieldError('email', 'Enter your email to request a free key.'); return }
+    if (!validEmail(email)) { fieldError('email', 'Enter a valid email address.'); return }
+    setBusy(true, 'Requesting a free key…')
+    const r = await ipcRenderer.invoke('jetcode:license-free-key', { email }).catch(() => ({ ok: false, message: 'Unable to reach the licensing service. Check your connection and try again.' }))
+    if (!r || !r.ok || !r.key) {
+      setBusy(false)
+      const msg = (r && r.message) || 'Free key request failed. Please try again.'
+      // Only address/email validation failures belong on the email field.
+      // Network, rate-limit, and signing-service failures are status errors.
+      if (/email/i.test(msg)) fieldError('email', msg)
+      else setStatus(msg, 'err')
+      return
+    }
+    input.value = normaliseKey(r.key)
+    setStatus('Free key received — activating…', 'ok')
+    await activate(input.value, email)
+  })
+
   emailInput.focus()
 </script>
 </body>
@@ -331,7 +341,7 @@ function showDialog(): Promise<boolean> {
   // Guard against double-open. Swap-key triggers showDialog mid-session; if a
   // first-run dialog is already visible (startup path ran, user never
   // dismissed it), just focus it and fold both callers into the same resolved
-  // value. Prevents the ipcMain.handle("olliecode:license-activate", ...)
+  // value. Prevents the ipcMain.handle("jetcode:license-activate", ...)
   // registration below from throwing on duplicate.
   if (firstRunWindow && !firstRunWindow.isDestroyed()) {
     firstRunWindow.focus()
@@ -344,13 +354,13 @@ function showDialog(): Promise<boolean> {
   // handlers inside settle(), but mid-session swap-key paths can re-enter
   // before the Promise rejection propagates. Clearing first makes handle()
   // below safe regardless of call history.
-  try { ipcMain.removeHandler("olliecode:license-activate") } catch { /* no prior */ }
-  try { ipcMain.removeHandler("olliecode:license-buy") } catch { /* no prior */ }
-  LOG("[olliecode-license-gate] opening dialog (in-process engine)")
+  try { ipcMain.removeHandler("jetcode:license-activate") } catch { /* no prior */ }
+  try { ipcMain.removeHandler("jetcode:license-free-key") } catch { /* no prior */ }
+  LOG("[jetcode-license-gate] opening dialog (in-process engine)")
   return new Promise((resolve) => {
     const win = new BrowserWindow({
       width: 540,
-      height: 560,
+      height: 600,
       resizable: true,
       minWidth: 340,
       minHeight: 420,
@@ -362,7 +372,7 @@ function showDialog(): Promise<boolean> {
       center: true,
       show: false,
       backgroundColor: licenseBackground(licenseThemeId()),
-      title: "olliEcode",
+      title: "jetcode",
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: false,
@@ -375,71 +385,91 @@ function showDialog(): Promise<boolean> {
     const settle = (ok: boolean) => {
       if (settled) return
       settled = true
-      LOG("[olliecode-license-gate] dialog settling, activated:", ok)
-      ipcMain.removeHandler("olliecode:license-activate")
-      ipcMain.removeHandler("olliecode:license-buy")
+      LOG("[jetcode-license-gate] dialog settling, activated:", ok)
+      ipcMain.removeHandler("jetcode:license-activate")
+      ipcMain.removeHandler("jetcode:license-free-key")
       if (firstRunWindow === win) firstRunWindow = null
       if (!win.isDestroyed()) win.destroy()
       resolve(ok)
     }
 
     ipcMain.handle(
-      "olliecode:license-activate",
+      "jetcode:license-activate",
       async (_evt, payload: { key: string; email?: string; remember: boolean }) => {
         LOG(
-          "[olliecode-license-gate] activate request, key prefix:",
+          "[jetcode-license-gate] activate request, key prefix:",
           payload.key.slice(0, 5),
           "email:",
           payload.email ? payload.email.replace(/(.{2}).+(@.+)/, "$1***$2") : "<empty>",
         )
         try {
           const r = await engine().activate(payload.key, payload.email)
-          LOG("[olliecode-license-gate] activated:", r)
+          LOG("[jetcode-license-gate] activated:", r)
           if (!payload.remember) markCacheWipeOnQuit()
           setTimeout(() => settle(true), 400)
           return { ok: true, message: `activated — tier ${r.tier}` }
         } catch (e) {
           const message = e instanceof Error ? e.message : String(e)
-          LOG("[olliecode-license-gate] activate failed:", message)
+          LOG("[jetcode-license-gate] activate failed:", message)
           return { ok: false, message }
         }
       },
     )
 
-    ipcMain.handle("olliecode:license-buy", async () => {
-      await shell.openExternal(displayConfig.buyUrl)
-    })
+    ipcMain.handle(
+      "jetcode:license-free-key",
+      async (_evt, payload: { email?: string }) => {
+        const email = payload?.email?.trim().toLowerCase() ?? ""
+        if (!email || !email.includes("@") || !email.split("@")[1]?.includes(".")) {
+          return { ok: false, message: "Enter a valid email address." }
+        }
+        LOG(
+          "[jetcode-license-gate] free-key request, email:",
+          email.replace(/(.{2}).+(@.+)/, "$1***$2"),
+        )
+        try {
+          const r = await engine().requestFreeKey(email)
+          LOG("[jetcode-license-gate] free key issued")
+          return { ok: true, key: r.key }
+        } catch (e) {
+          const message = e instanceof Error ? e.message : String(e)
+          LOG("[jetcode-license-gate] free-key failed:", message)
+          return { ok: false, message }
+        }
+      },
+    )
 
     win.webContents.on("did-fail-load", (_e, code, desc, url) => {
-      LOG("[olliecode-license-gate] did-fail-load:", code, desc, url.slice(0, 80))
+      LOG("[jetcode-license-gate] did-fail-load:", code, desc, url.slice(0, 80))
     })
     win.webContents.on("console-message", (_e, level, message) => {
-      LOG("[olliecode-license-gate] renderer console:", level, message)
+      LOG("[jetcode-license-gate] renderer console:", level, message)
     })
     win.webContents.on("did-finish-load", () => {
-      LOG("[olliecode-license-gate] did-finish-load — dialog HTML ready")
+      LOG("[jetcode-license-gate] did-finish-load — dialog HTML ready")
     })
-    win.once("ready-to-show", () => {
+
+    let revealed = false
+    const reveal = () => {
+      if (revealed || win.isDestroyed()) return
+      revealed = true
       win.show()
       win.focus()
       win.moveTop()
       setTimeout(() => !win.isDestroyed() && win.setAlwaysOnTop(false), 2500)
-    })
+    }
+
+    win.once("ready-to-show", reveal)
     win.on("closed", () => settle(false))
-    // Fire the config fetch in parallel with the window boot. Whichever
-    // finishes first wins; the fetch's 500ms timeout means loadURL waits at
-    // most that long for an up-to-date price before falling back.
-    fetchDisplayConfig()
-      .finally(() => {
-        const html = dialogHtml().replace(
-          "__OLLIE_PRICE__",
-          (displayConfig.currency + displayConfig.price).replace(/[<>&"']/g, ""),
-        )
-        if (win.isDestroyed()) return
-        win.loadURL("data:text/html;charset=utf-8," + encodeURIComponent(html)).catch((err) => {
-          LOG("[olliecode-license-gate] loadURL failed:", err)
-          settle(false)
-        })
+
+    void win
+      .loadURL("data:text/html;charset=utf-8," + encodeURIComponent(dialogHtml()))
+      .then(() => {
+        reveal()
+      })
+      .catch((err) => {
+        LOG("[jetcode-license-gate] loadURL failed:", err)
+        settle(false)
       })
   })
 }
@@ -455,7 +485,7 @@ let heartbeatBusy = false
 let lastServerCheck = 0
 
 function lockOut(reason: string): void {
-  LOG("[olliecode-license-gate] heartbeat lockout:", reason)
+  LOG("[jetcode-license-gate] heartbeat lockout:", reason)
   try {
     engine().clear()
   } catch {
@@ -496,7 +526,7 @@ export function startLicenseHeartbeat(): void {
       const result = await engine().validate()
       if (!result.ok && result.permanent) lockOut(result.error ?? "validation refused")
     } catch (e) {
-      LOG("[olliecode-license-gate] heartbeat error:", (e as Error).message)
+      LOG("[jetcode-license-gate] heartbeat error:", (e as Error).message)
     } finally {
       heartbeatBusy = false
     }
@@ -521,7 +551,7 @@ export async function ensureLicensedOrPrompt(_deps: GateDeps = {}): Promise<void
   checkDirectiveEnv()
 
   const first = await engine().status()
-  LOG("[olliecode-license-gate] initial status:", first)
+  LOG("[jetcode-license-gate] initial status:", first)
   if (first.active) {
     // Background revocation ping — never blocks boot. If the Worker rejects
     // the key, the next launch will see no cache and re-prompt.
@@ -533,17 +563,17 @@ export async function ensureLicensedOrPrompt(_deps: GateDeps = {}): Promise<void
   }
   const ok = await showDialog()
   if (!ok) {
-    LOG("[olliecode-license-gate] user cancelled, quitting")
+    LOG("[jetcode-license-gate] user cancelled, quitting")
     app.quit()
     await new Promise((r) => setTimeout(r, 50))
-    throw new Error("olliEcode license gate: user cancelled")
+    throw new Error("jetcode license gate: user cancelled")
   }
   const after = await engine().status()
-  LOG("[olliecode-license-gate] post-activate status:", after)
+  LOG("[jetcode-license-gate] post-activate status:", after)
   if (!after.active) {
     app.quit()
     throw new Error(
-      `olliEcode license gate: still inactive after activate (${after.active === false ? after.reason ?? "unknown" : "unknown"})`,
+      `jetcode license gate: still inactive after activate (${after.active === false ? after.reason ?? "unknown" : "unknown"})`,
     )
   }
   startLicenseHeartbeat()
@@ -563,15 +593,14 @@ export async function ensureLicensedOrPrompt(_deps: GateDeps = {}): Promise<void
 // same pattern as the first-run dialog. No renderer / preload changes, so the
 // surface area is one file.
 
-const MANAGE_CHANNEL_STATUS = "olliecode:license-status"
-const MANAGE_CHANNEL_DEACTIVATE = "olliecode:license-deactivate"
-const MANAGE_CHANNEL_SWAP = "olliecode:license-swap"
-const MANAGE_CHANNEL_BUY = "olliecode:license-buy-manage"
-const MANAGE_CHANNEL_OPEN = "olliecode:license-manage-open"
-const MANAGE_CHANNEL_FULL_KEY = "olliecode:license-full-key"
-const THEME_GET_CHANNEL = "olliecode:theme-get"
-const THEME_SET_CHANNEL = "olliecode:theme-set"
-const BACKDROP_CHANNEL = "olliecode:backdrop-luminance"
+const MANAGE_CHANNEL_STATUS = "jetcode:license-status"
+const MANAGE_CHANNEL_DEACTIVATE = "jetcode:license-deactivate"
+const MANAGE_CHANNEL_SWAP = "jetcode:license-swap"
+const MANAGE_CHANNEL_OPEN = "jetcode:license-manage-open"
+const MANAGE_CHANNEL_FULL_KEY = "jetcode:license-full-key"
+const THEME_GET_CHANNEL = "jetcode:theme-get"
+const THEME_SET_CHANNEL = "jetcode:theme-set"
+const BACKDROP_CHANNEL = "jetcode:backdrop-luminance"
 
 // Dragging a transparent window runs a modal move loop in the shell. A display
 // capture during that loop blocks the main process for tens of milliseconds on
@@ -619,12 +648,12 @@ function manageDialogHtml(): string {
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline';" />
-<title>olliEcode — License</title>
+<title>jetcode — License</title>
 ${licenseAppearance(licenseThemeId())}
 </head>
 <body>
 <div class="card">
-  <div class="brand"><span class="brand-mark" aria-hidden="true">oE</span><span>olliEcode</span><span class="eyebrow">Workspace access</span></div>
+  <div class="brand"><span class="brand-mark" aria-hidden="true">jC</span><span>jetcode</span><span class="eyebrow">Workspace access</span></div>
   <h1>License</h1>
   <p class="sub" id="sub">Loading…</p>
   <div id="body"></div>
@@ -721,7 +750,7 @@ export function openManagementDialog(): void {
     manageWindow.moveTop()
     return
   }
-  LOG("[olliecode-license-gate] opening management dialog")
+  LOG("[jetcode-license-gate] opening management dialog")
   const win = new BrowserWindow({
     width: 560,
     height: 570,
@@ -736,7 +765,7 @@ export function openManagementDialog(): void {
     center: true,
     show: false,
     backgroundColor: licenseBackground(licenseThemeId()),
-    title: "olliEcode",
+    title: "jetcode",
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -766,7 +795,6 @@ export function registerLicenseManagement(): void {
     ipcMain.removeHandler(MANAGE_CHANNEL_STATUS)
     ipcMain.removeHandler(MANAGE_CHANNEL_DEACTIVATE)
     ipcMain.removeHandler(MANAGE_CHANNEL_SWAP)
-    ipcMain.removeHandler(MANAGE_CHANNEL_BUY)
     ipcMain.removeHandler(MANAGE_CHANNEL_OPEN)
     ipcMain.removeHandler(MANAGE_CHANNEL_FULL_KEY)
     ipcMain.removeHandler(THEME_GET_CHANNEL)
@@ -805,7 +833,7 @@ export function registerLicenseManagement(): void {
       fs.writeFileSync(p, JSON.stringify({ id }, null, 2))
       if (manageWindow && !manageWindow.isDestroyed()) {
         manageWindow.setBackgroundColor(licenseBackground(id))
-        manageWindow.webContents.send("olliecode:theme-changed", id)
+        manageWindow.webContents.send("jetcode:theme-changed", id)
       }
       return { ok: true }
     } catch {
@@ -931,9 +959,6 @@ export function registerLicenseManagement(): void {
     return { ok: true }
   })
 
-  ipcMain.handle(MANAGE_CHANNEL_BUY, async () => {
-    await shell.openExternal(displayConfig.buyUrl)
-  })
 
   // Native menu. The upstream app does not call Menu.setApplicationMenu, so
   // Electron falls back to its auto-generated default which does not include
@@ -942,7 +967,7 @@ export function registerLicenseManagement(): void {
   // close) keeps working, with one extra Help entry for License and About.
   // autoHideMenuBar stays true, so the bar is invisible until Alt is tapped.
   // The accelerator below fires whether or not the bar is visible, as long as
-  // an olliEcode window has focus — i.e. never while the user is in another app.
+  // an jetcode window has focus — i.e. never while the user is in another app.
   const licenseItem: Electron.MenuItemConstructorOptions = {
     label: "License…",
     accelerator: "CmdOrCtrl+Shift+L",
@@ -965,11 +990,11 @@ export function registerLicenseManagement(): void {
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 
   // No globalShortcut.register. A system-wide accelerator that fires even
-  // when olliEcode is unfocused would hijack Ctrl+Shift+L in every other
+  // when jetcode is unfocused would hijack Ctrl+Shift+L in every other
   // app on the box (VS Code "Select all occurrences", browser context,
   // etc.) which the operator explicitly called out as unwanted. The menu
-  // accelerator above only fires when an olliEcode window has focus, which
+  // accelerator above only fires when an jetcode window has focus, which
   // is the right scope for a license-management entry buried in Help.
 
-  LOG("[olliecode-license-gate] management registered (menu + ipc)")
+  LOG("[jetcode-license-gate] management registered (menu + ipc)")
 }

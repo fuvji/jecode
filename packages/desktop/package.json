@@ -1,13 +1,12 @@
 {
   "name": "@opencode/desktop",
   "private": true,
-  "version": "2026.11.09.13",
+  "version": "2026.11.18.1",
   "type": "module",
   "license": "MIT",
-  "homepage": "https://opencode.ai",
+  "homepage": "https://github.com/fuvji/jetcode",
   "author": {
-    "name": "OpenCode",
-    "email": "hello@opencode.ai"
+    "name": "jetcode"
   },
   "scripts": {
     "typecheck": "bun check --no-script -b",

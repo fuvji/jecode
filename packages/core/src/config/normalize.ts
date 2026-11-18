@@ -362,6 +362,15 @@ function normalizeCompaction(
     )
     if (value !== undefined) result.auto = value
   }
+  if (own(input.compaction, "token_saver")) {
+    const value = decodeEncoded(
+      ConfigCompaction.Info.fields.token_saver,
+      input.compaction.token_saver,
+      ["compaction", "token_saver"],
+      diagnostics,
+    )
+    if (value !== undefined) result.token_saver = value
+  }
   const legacyTokens = own(input.compaction, "preserve_recent_tokens")
     ? decodeEncoded(
         ConfigCompaction.Keep.fields.tokens,

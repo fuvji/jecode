@@ -11,7 +11,7 @@ export interface SkillEditor {
   remove(id: string): void
 }
 
-export interface SkillDomain extends SkillApi {
+export interface SkillDomain extends Omit<SkillApi, "install"> {
   readonly transform: Transform<SkillEditor>
   readonly reload: () => Promise<void>
 }

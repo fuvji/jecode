@@ -13,6 +13,8 @@ import { errorMessage } from "@/shell/layout/helpers"
 import { showToast } from "@/shell/notifications/toast"
 import type { LocalProject } from "@/shell/state/layout"
 import { createProjectSessionActions } from "@/shell/tabs/project-sessions"
+import { useTabs } from "@/shell/tabs/tabs"
+import { pathKey } from "@/workspaces/path-key"
 import {
   INITIAL_PROJECT_IMPORT_STATE,
   selectProjectImporting,
@@ -21,6 +23,7 @@ import {
   type ProjectImportEvent,
   type ProjectImportTarget,
 } from "./import-machine"
+import { DialogEraseProject } from "./erase-dialog"
 import { useRevealProject } from "./reveal"
 
 export function createProjectActions() {
@@ -37,6 +40,8 @@ export function createProjectActions() {
   const global = useGlobal()
 
   const sessions = createProjectSessionActions()
+
+  const tabs = useTabs()
 
   const revealProject = useRevealProject()
 
@@ -153,6 +158,35 @@ export function createProjectActions() {
 
   onCleanup(() => dispatchImport({ type: "disposed" }))
 
+  function eraseProject(conn: ServerConnection.Any, project: LocalProject) {
+    const ctx = global.serverCtx(ServerConnection.key(conn))
+
+    if (!ctx || !project.id || project.id === "global") return
+    const server = ServerConnection.key(conn)
+    const directory = pathKey(project.worktree)
+    const sessionIDs = ctx.data.session
+      .list()
+      .filter((session) => pathKey(session.location.directory) === directory)
+      .map((session) => session.id)
+
+    // Remove it from the sidebar before the round trip; the server event and refresh below settle the canonical list.
+    ctx.sync.project.remove(project.id)
+    ctx.projects.hide(project)
+    if (sessionIDs.length) tabs.removeSessions({ server, directory: project.worktree, sessionIDs })
+    tabs.removeProjectDrafts({ server, directory: project.worktree })
+
+    void ctx.sdk.api.project
+      .remove({ projectID: project.id })
+      .then(() => ctx.sync.project.refresh())
+      .catch((cause: unknown) => {
+        showToast({
+          title: language.t("common.requestFailed"),
+          description: errorMessage(cause, language.t("common.requestFailed")),
+        })
+        void ctx.sync.project.refresh()
+      })
+  }
+
   return {
     authenticate,
     editServer,
@@ -183,6 +217,19 @@ export function createProjectActions() {
     },
     hide: (conn: ServerConnection.Any, project: LocalProject) =>
       global.serverCtx(ServerConnection.key(conn))?.projects.hide(project),
+    canErase: (project: LocalProject) => !!project.id && project.id !== "global",
+    erase(conn: ServerConnection.Any, project: LocalProject) {
+      const ctx = global.serverCtx(ServerConnection.key(conn))
+
+      if (!ctx || !project.id || project.id === "global") return
+      void dialog.show(() => (
+        <DialogEraseProject
+          name={project.name ?? project.worktree}
+          path={project.worktree}
+          onConfirm={() => eraseProject(conn, project)}
+        />
+      ))
+    },
     canReveal: revealProject.available,
     reveal: revealProject.reveal,
   }

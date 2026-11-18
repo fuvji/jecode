@@ -7,7 +7,7 @@ export default {
   email: "help@anoma.ly",
   socialCard: "https://social-cards.sst.dev",
   github: "https://github.com/anomalyco/opencode",
-  discord: "https://opencode.ai/discord",
+  discord: "https://discord.gg/fvrdYzrQjq",
   headerLinks: [
     { name: "app.header.home", url: "/" },
     // The V2 docs on the main site; this app is the V1 docs, on docs.opencode.ai.

@@ -31,7 +31,7 @@ const TRANSPARENT_BACKGROUND = "#00000000"
 
 export function windowAppearance(path: Path.Path, paths: DesktopPaths.Resolved) {
   return {
-    title: "olliEcode",
+    title: "jetcode",
     icon: iconPath(path, paths),
     // The Clear theme reveals the desktop through #root, which requires a
     // per-pixel transparent window. Opaque kits paint their base colour over
@@ -47,6 +47,9 @@ export function windowAppearance(path: Path.Path, paths: DesktopPaths.Resolved) 
       // Packaged builds have no DevTools: the renderer holds the preload
       // bridge, so an inspector there is a live handle on every IPC call.
       devTools: devToolsEnabled(),
+      // jetcode: no background timer/rAF throttling, so sessions keep the
+      // same throughput when the window is not focused.
+      backgroundThrottling: false,
     },
   }
 }

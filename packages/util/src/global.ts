@@ -60,7 +60,7 @@ export function make(input: Partial<Interface> = {}): Interface {
   }
 }
 
-// olliEcode-hardened mkdir. The vanilla `fs.promises.mkdir(dir, { recursive:
+// jetcode-hardened mkdir. The vanilla `fs.promises.mkdir(dir, { recursive:
 // true })` tolerates an existing directory but still throws EEXIST when the
 // path exists as a FILE. We saw this in the wild as:
 //
@@ -77,7 +77,7 @@ export function make(input: Partial<Interface> = {}): Interface {
 // Now: on EEXIST we stat the path. If it's already a directory we treat
 // mkdir as the no-op it meant to be. If it's a file (or anything other
 // than a directory — symlink to nothing, FIFO, socket) we rename it
-// aside to `<path>.olliecode-bak-<epoch>` and create the directory fresh.
+// aside to `<path>.jetcode-bak-<epoch>` and create the directory fresh.
 // The bak file is left on disk so the user can recover their own content
 // if the collision was genuine; nothing is deleted. All other mkdir
 // errors still propagate — permission denied, path too long, bad drive
@@ -100,7 +100,7 @@ async function ensureDirResilient(dir: string): Promise<void> {
     return
   }
   if (st.isDirectory()) return
-  const backup = `${dir}.olliecode-bak-${Date.now()}`
+  const backup = `${dir}.jetcode-bak-${Date.now()}`
   await fs.promises.rename(dir, backup)
   await fs.promises.mkdir(dir, { recursive: true })
 }

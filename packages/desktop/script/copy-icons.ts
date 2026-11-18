@@ -5,7 +5,7 @@ const arg = process.argv[2]
 
 const channel = arg === "dev" || arg === "beta" || arg === "prod" ? arg : resolveChannel()
 
-// olliEcode: "local" channel reuses the "dev" icon set — there's no separate
+// jetcode: "local" channel reuses the "dev" icon set — there's no separate
 // local asset dir, and we only care about the channel string for the outgoing
 // User-Agent, not the icon branding.
 const iconChannel = channel === "local" ? "dev" : channel

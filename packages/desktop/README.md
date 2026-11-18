@@ -1,6 +1,6 @@
-# OpenCode Desktop
+# jetcode Desktop
 
-The OpenCode Desktop app, built with Electron.
+The jetcode desktop app, built with Electron.
 
 ## Development
 

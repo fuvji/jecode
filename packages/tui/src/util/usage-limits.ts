@@ -28,7 +28,7 @@ export function servedByConsole(_provider: LimitedProvider | undefined) {
   return false
 }
 
-// olliEcode: no model ever reports a limit. The Console service already returns
+// jetcode: no model ever reports a limit. The Console service already returns
 // undefined (see packages/core/src/usage-limits.ts), so TUI callers that reach
 // here with a crafted Info still get nothing.
 export function modelUsage(

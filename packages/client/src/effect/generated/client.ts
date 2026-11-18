@@ -20,6 +20,8 @@ import type {
   PluginListOutput,
   PluginGuiInput,
   PluginGuiOutput,
+  PluginInstallInput,
+  PluginInstallOutput,
   PluginCheckInput,
   PluginCheckOutput,
   PluginUpdateInput,
@@ -179,6 +181,8 @@ import type {
   ProjectListOutput,
   ProjectUpdateInput,
   ProjectUpdateOutput,
+  ProjectRemoveInput,
+  ProjectRemoveOutput,
   FormListInput,
   FormListOutput,
   PermissionRequestListInput,
@@ -209,6 +213,8 @@ import type {
   CommandListOutput,
   SkillListInput,
   SkillListOutput,
+  SkillInstallInput,
+  SkillInstallOutput,
   RpcCallInput,
   RpcCallOutput,
   EventSubscribeInput,
@@ -406,6 +412,11 @@ const EndpointPluginGui = (raw: RawClient["server.plugin"]) => (input: PluginGui
     ),
   )
 
+const EndpointPluginInstall = (raw: RawClient["server.plugin"]) => (input: PluginInstallInput) =>
+  preserveEffect<PluginInstallOutput>()(
+    raw["plugin.install"]({ payload: { package: input["package"] } }).pipe(Effect.mapError(mapClientError)),
+  )
+
 const EndpointPluginCheck = (raw: RawClient["server.plugin"]) => (input?: PluginCheckInput) =>
   preserveEffect<PluginCheckOutput>()(
     raw["plugin.check"]({ query: { location: input?.["location"] }, payload: { target: input?.["target"] } }).pipe(
@@ -423,6 +434,7 @@ const EndpointPluginUpdate = (raw: RawClient["server.plugin"]) => (input: Plugin
 const adaptGroupPlugin = (raw: RawClient["server.plugin"]) => ({
   list: EndpointPluginList(raw),
   gui: EndpointPluginGui(raw),
+  install: EndpointPluginInstall(raw),
   check: EndpointPluginCheck(raw),
   update: EndpointPluginUpdate(raw),
 })
@@ -1258,9 +1270,15 @@ const EndpointProjectUpdate = (raw: RawClient["server.project"]) => (input: Proj
     }).pipe(Effect.mapError(mapClientError)),
   )
 
+const EndpointProjectRemove = (raw: RawClient["server.project"]) => (input: ProjectRemoveInput) =>
+  preserveEffect<ProjectRemoveOutput>()(
+    raw["project.remove"]({ params: { projectID: input["projectID"] } }).pipe(Effect.mapError(mapClientError)),
+  )
+
 const adaptGroupProject = (raw: RawClient["server.project"]) => ({
   list: EndpointProjectList(raw),
   update: EndpointProjectUpdate(raw),
+  remove: EndpointProjectRemove(raw),
 })
 
 const EndpointFormList = (raw: RawClient["server.form"]) => (input?: FormListInput) =>
@@ -1402,7 +1420,15 @@ const EndpointSkillList = (raw: RawClient["server.skill"]) => (input?: SkillList
     raw["skill.list"]({ query: { location: input?.["location"] } }).pipe(Effect.mapError(mapClientError)),
   )
 
-const adaptGroupSkill = (raw: RawClient["server.skill"]) => ({ list: EndpointSkillList(raw) })
+const EndpointSkillInstall = (raw: RawClient["server.skill"]) => (input: SkillInstallInput) =>
+  preserveEffect<SkillInstallOutput>()(
+    raw["skill.install"]({ payload: { url: input["url"], name: input["name"] } }).pipe(Effect.mapError(mapClientError)),
+  )
+
+const adaptGroupSkill = (raw: RawClient["server.skill"]) => ({
+  list: EndpointSkillList(raw),
+  install: EndpointSkillInstall(raw),
+})
 
 const EndpointRpcCall = (raw: RawClient["server.rpc"]) => (input: RpcCallInput) =>
   preserveEffect<RpcCallOutput>()(
@@ -1952,9 +1978,11 @@ const adaptGroupConfig = (raw: RawClient["server.config"]) => ({
   shells: EndpointConfigShells(raw),
 })
 
-const EndpointExperimentalConfigUpdate = (raw: RawClient["server.config"]) => (input: ExperimentalConfigUpdateInput) =>
+const EndpointExperimentalConfigUpdate = (raw: RawClient["server.config"]) => (input?: ExperimentalConfigUpdateInput) =>
   preserveEffect<ExperimentalConfigUpdateOutput>()(
-    raw["config.update"]({ payload: { shell: input["shell"] } }).pipe(Effect.mapError(mapClientError)),
+    raw["config.update"]({ payload: { shell: input?.["shell"], plugins: input?.["plugins"] } }).pipe(
+      Effect.mapError(mapClientError),
+    ),
   )
 
 const adaptGroupExperimentalConfig = (raw: RawClient["server.config"]) => ({

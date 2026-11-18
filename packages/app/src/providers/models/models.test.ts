@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { latestModels, uniqueModels } from "./models"
+import { latestModels, rankModels, uniqueModels } from "./models"
 
 const model = (provider: string, id: string, release_date: string, family?: string) => ({
   id,
@@ -37,6 +37,31 @@ test("groups free models apart from their paid twin", () => {
     { providerID: "opencode", modelID: "x-free" },
     { providerID: "opencode", modelID: "x" },
   ])
+})
+
+test("rankModels prefers a tool-capable free model over a newer text-only paid one", () => {
+  const ranked = rankModels([
+    {
+      id: "paid-text",
+      name: "Paid Text",
+      provider: { id: "paid" },
+      release_date: "2026-11-01",
+      cost: { input: 10 },
+      limit: { context: 1_000_000 },
+      capabilities: { toolcall: false, input: { text: true }, output: { text: true } },
+    },
+    {
+      id: "free-coder",
+      name: "Free Coder",
+      provider: { id: "opencode" },
+      release_date: "2026-01-01",
+      cost: { input: 0 },
+      limit: { context: 200_000 },
+      capabilities: { toolcall: true, input: { text: true }, output: { text: true } },
+    },
+  ])
+
+  expect(ranked[0]?.id).toBe("free-coder")
 })
 
 test("uniqueModels keeps the first of each model in order", () => {

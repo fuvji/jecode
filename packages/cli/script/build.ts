@@ -187,7 +187,7 @@ export default { path: file, version: ${JSON.stringify(opencodePty.version)}, sh
     minify: true,
     bytecode: true,
     sourcemap:
-      process.env.OLLIECODE_RELEASE === "1"
+      process.env.JETCODE_RELEASE === "1"
         ? "none"
         : Script.channel === "dev" || Script.channel === "local"
           ? "inline"
@@ -215,9 +215,9 @@ export default { path: file, version: ${JSON.stringify(opencodePty.version)}, sh
       OPENCODE_CLI_NAME: "'opencode'",
       OPENCODE_CHANNEL: `'${Script.channel}'`,
       OPENCODE_ARTIFACT: `'cli'`,
-      OLLIECODE_LICENSE_PUBKEY: `'${(process.env.OLLIECODE_LICENSE_PUBKEY ?? "dev-pubkey-replace").replace(/\s+/g, "")}'`,
-      OLLIECODE_CACHE_SALT: `'${process.env.OLLIECODE_CACHE_SALT ?? "dev-cache-salt-replace"}'`,
-      OLLIECODE_FRESH_HASH: `'${process.env.OLLIECODE_FRESH_HASH ?? ""}'`,
+      JETCODE_LICENSE_PUBKEY: `'${(process.env.JETCODE_LICENSE_PUBKEY ?? process.env.OLLIECODE_LICENSE_PUBKEY ?? "dev-pubkey-replace").replace(/\s+/g, "")}'`,
+      JETCODE_CACHE_SALT: `'${process.env.JETCODE_CACHE_SALT ?? process.env.OLLIECODE_CACHE_SALT ?? "dev-cache-salt-replace"}'`,
+      JETCODE_FRESH_HASH: `'${process.env.JETCODE_FRESH_HASH ?? process.env.OLLIECODE_FRESH_HASH ?? ""}'`,
       ...(highlights ? { OPENCODE_RELEASE_HIGHLIGHTS: JSON.stringify(highlights) } : {}),
       OPENCODE_LIBC: item.os === "linux" ? `'${item.abi ?? "glibc"}'` : "undefined",
       // FFF_LIBC selects the fff native lib variant: "musl" or "gnu".

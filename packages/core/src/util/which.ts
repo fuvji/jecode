@@ -17,7 +17,7 @@ export function which(cmd: string, env?: NodeJS.ProcessEnv, bin?: string) {
 // Microsoft Store apps, such as PowerShell 7, put app execution aliases in WindowsApps on PATH. They launch like
 // any executable, but stat rejects them with EACCES, so `which` skips them.
 //
-// olliEcode hardening: wrap BOTH fs calls in try/catch. Upstream's
+// jetcode hardening: wrap BOTH fs calls in try/catch. Upstream's
 // `lstatSync(file, { throwIfNoEntry: false })` swallows ENOENT only — any
 // other errno (EACCES on protected WindowsApps entries, EUNKNOWN on broken
 // reparse points left behind by uninstalled apps like OpenAI's Codex CLI,

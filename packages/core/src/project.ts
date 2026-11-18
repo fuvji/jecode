@@ -90,6 +90,8 @@ export interface ActivateOptions {
 export interface Interface {
   readonly list: (input?: ListInput) => Effect.Effect<ReadonlyArray<Info>>
   readonly update: (input: UpdateInput) => Effect.Effect<Info, NotFoundError>
+  /** Deletes the Project and its sessions. Files on disk are left untouched. */
+  readonly remove: (projectID: ID) => Effect.Effect<void, NotFoundError>
   /** Records Project activity for recency ordering, at most once per minute per Project. */
   readonly activate: (projectID: ID, options?: ActivateOptions) => Effect.Effect<void>
   /** Resolves the owning Project, persisting it unless `persist` is false. */
@@ -282,6 +284,18 @@ const layer = Layer.effect(
       const project = fromRow(row)
       yield* bus.publish(ProjectSchema.Event.Updated, project)
       return project
+    })
+
+    const remove = Effect.fn("Project.remove")(function* (projectID: ID) {
+      // Sessions, messages, parts, inbox entries, and worktrees cascade from the Project row.
+      const row = yield* db
+        .delete(ProjectTable)
+        .where(eq(ProjectTable.id, projectID))
+        .returning({ id: ProjectTable.id })
+        .get()
+        .pipe(Effect.orDie)
+      if (!row) return yield* new NotFoundError({ projectID })
+      yield* bus.publish(ProjectSchema.Event.Removed, { id: projectID })
     })
 
     const activated = new Map<ID, number>()
@@ -504,7 +518,7 @@ const layer = Layer.effect(
       )
     })
 
-    return Service.of({ list, update, activate, resolve, sweep })
+    return Service.of({ list, update, remove, activate, resolve, sweep })
   }),
 )
 

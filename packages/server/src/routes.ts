@@ -44,7 +44,7 @@ import { Api } from "./api"
 import { ServerAuth } from "./auth"
 import { CorsConfig } from "./cors"
 import { handlers } from "./handlers"
-import { OlliecodeResetLayer } from "./handlers/olliecode-reset"
+import { JetcodeResetLayer } from "./handlers/jetcode-reset"
 import { authorizationLayer } from "./middleware/authorization"
 import { schemaErrorLayer } from "./middleware/schema-error"
 import { ServerPairing } from "./pairing"
@@ -187,7 +187,7 @@ function makeRoutes<AuthError, AuthServices>(
         ),
         ServerInfo.layer(serviceURLs, Context.get(context, Global.Service).tmp, options.app),
       )
-      const api = Layer.mergeAll(HttpApiBuilder.layer(Api, { openapiPath: "/openapi.json" }), OlliecodeResetLayer).pipe(
+      const api = Layer.mergeAll(HttpApiBuilder.layer(Api, { openapiPath: "/openapi.json" }), JetcodeResetLayer).pipe(
         Layer.provide(handlers.pipe(Layer.provide(services), Layer.provide(Layer.succeed(CorsConfig, options)))),
         Layer.provide(formLocationLayer),
         Layer.provide(sessionLocationLayer),

@@ -30,6 +30,8 @@ import { SearchHighlight, SearchList, type SearchListHandle, type SearchListRow 
 import { Tooltip } from "@opencode/ui/tooltip"
 import { TextInput } from "@opencode/ui/text-input"
 import { ModelTooltip } from "./tooltip"
+import { ModelValueTag } from "./value-tag"
+import { bestValue } from "./value"
 import { ModelDetails } from "./details"
 import { useLanguage } from "@/runtime/i18n/language"
 import { ExternalLink } from "@/runtime/platform/external-link"
@@ -185,6 +187,11 @@ const ModelList: Component<{
   }
 
   function ModelRows(props: { items: ModelItem[]; mobile?: boolean }) {
+    const best = createMemo(() => {
+      const top = bestValue(props.items)
+      return top ? modelKey(top.model) : undefined
+    })
+
     return (
       <SettingsList variant="catalog">
         <For each={props.items}>
@@ -217,6 +224,7 @@ const ModelList: Component<{
                   <Show when={item.latest}>
                     <Badge class="shrink-0">{language.t("model.tag.latest")}</Badge>
                   </Show>
+                  <ModelValueTag model={item} best={best() === modelKey(item)} />
                   <Show when={usage(item)}>{(value) => <ModelUsageTag usage={value()} />}</Show>
                 </div>
               </div>
@@ -669,6 +677,10 @@ export function DialogSelectModel(props: { provider?: string; model?: ModelState
   )
 
   const rowItem = (id: string) => rows().find((row) => row.id === id)?.item
+  const best = createMemo(() => {
+    const top = bestValue(rows().map((row) => row.item))
+    return top ? modelKey(top.model) : undefined
+  })
   const flyoutId = createMemo(() => selectFlyoutOpenId(flyout()))
 
   const flyoutItem = () => {
@@ -966,6 +978,7 @@ export function DialogSelectModel(props: { provider?: string; model?: ModelState
           <Show when={item().latest}>
             <Badge class="shrink-0">{language.t("model.tag.latest")}</Badge>
           </Show>
+          <ModelValueTag model={item()} best={best() === modelKey(item())} />
         </span>
         <Show when={usage(item())}>{(value) => <ModelUsageTag usage={value()} />}</Show>
         <Show when={active()}>

@@ -774,6 +774,38 @@
   gap: 16px;
 }
 
+.settings-install-segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--v2-background-bg-layer-02);
+  box-shadow: inset 0 0 0 0.5px var(--v2-border-border-muted);
+}
+
+.settings-install-segmented button {
+  border: 0;
+  border-radius: 10px;
+  padding: 7px 10px;
+  color: var(--v2-text-text-muted);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 530;
+  cursor: pointer;
+  transition: color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
+}
+
+.settings-install-segmented button:hover {
+  color: var(--v2-text-text-base);
+}
+
+.settings-install-segmented button[data-active] {
+  color: var(--v2-text-text-base);
+  background: var(--v2-background-bg-layer-01);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+}
+
 .settings-section-title {
   padding: 0;
   font-size: 13px;

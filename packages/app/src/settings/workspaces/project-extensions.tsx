@@ -1,3 +1,5 @@
+import { Button } from "@opencode/ui/button"
+import { useDialog } from "@opencode/ui/context/dialog"
 import { Icon } from "@opencode/ui/icon"
 import { Switch } from "@opencode/ui/switch"
 import { Tabs } from "@opencode/ui/tabs"
@@ -25,6 +27,7 @@ import { ProjectFolderMissing } from "./project-folder-missing"
 import { configuredLanguageServers } from "./project-lsp"
 import { SettingsList } from "@/settings/list"
 import { createExtensionLoad, ExtensionLoadFailed } from "@/settings/extension-load"
+import { DialogInstallExtension, type ExtensionKind } from "@/settings/providers/install-extension"
 import "./project.css"
 
 type SkillItem = {
@@ -220,6 +223,7 @@ export const ProjectSettingsExtensions: Component<{
   const serverSDK = useServerSDK()
   const directorySDK = useWorkspaceLocation()
   const data = useData()
+  const dialog = useDialog()
   const mcp = useMcpController(() => directorySDK().directory)
 
   createEffect(() => {
@@ -323,6 +327,23 @@ export const ProjectSettingsExtensions: Component<{
     <For each={items}>{(item) => <ExtensionRow icon="post-skill" name={item.name} />}</For>
   )
 
+  const openInstall = (kind: ExtensionKind) =>
+    dialog.show(() => (
+      <DialogInstallExtension
+        kind={kind}
+        directory={directorySDK().directory}
+        onInstalled={() => {
+          plugins.invalidate()
+          const ref = { directory: directorySDK().directory }
+          void Promise.all([
+            data.location.skill.sync(),
+            data.location.skill.sync(ref),
+            data.location.mcp.server.sync(ref),
+          ]).catch(() => undefined)
+        }}
+      />
+    ))
+
   return (
     <>
       <div class="settings-tab-header">
@@ -358,7 +379,11 @@ export const ProjectSettingsExtensions: Component<{
               <ProjectSectionHeader
                 kind="mcps"
                 empty={projectMcpNames().length === 0}
-                action={<span>{language.t("settings.extensions.manageConfig")}</span>}
+                action={
+                  <Button size="small" variant="outline" icon="plus" onClick={() => openInstall("mcps")}>
+                    {language.t("settings.extensions.install")}
+                  </Button>
+                }
               />
               <Show when={projectMcpNames().length > 0}>
                 <ExtensionCard>{mcpRows(projectMcpNames())}</ExtensionCard>
@@ -372,7 +397,11 @@ export const ProjectSettingsExtensions: Component<{
               <ProjectSectionHeader
                 kind="plugins"
                 empty={pluginLists() !== undefined && projectPlugins().length === 0}
-                action={<span>{language.t("settings.extensions.manageConfig")}</span>}
+                action={
+                  <Button size="small" variant="outline" icon="plus" onClick={() => openInstall("plugins")}>
+                    {language.t("settings.extensions.install")}
+                  </Button>
+                }
               />
               <Show when={plugins.view().status === "loading"}>
                 <p class="project-settings-extension-empty-description">{language.t("common.loading")}</p>
@@ -397,9 +426,14 @@ export const ProjectSettingsExtensions: Component<{
                 kind="skills"
                 empty={projectSkills().length === 0}
                 action={
-                  <ExternalLink class="settings-extension-link" href="https://opencode.ai/docs/skills">
-                    {language.t("settings.extensions.addSkills")}
-                  </ExternalLink>
+                  <div class="flex items-center gap-3">
+                    <ExternalLink class="settings-extension-link" href="https://opencode.ai/docs/skills">
+                      {language.t("settings.extensions.addSkills")}
+                    </ExternalLink>
+                    <Button size="small" variant="outline" icon="plus" onClick={() => openInstall("skills")}>
+                      {language.t("settings.extensions.install")}
+                    </Button>
+                  </div>
                 }
               />
               <Show when={projectSkills().length > 0}>

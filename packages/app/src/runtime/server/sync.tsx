@@ -139,6 +139,10 @@ function createServerSyncContextInner(serverSDK: ServerSDK, data: Data) {
     })
   }
 
+  function applyProjectRemoved(projectID: string) {
+    setGlobalStore("project", (projects) => projects.filter((project) => project.id !== projectID))
+  }
+
   // Observes the list the bootstrap loads without fetching it again, so readers can tell "no projects" from "not loaded".
   const projectsQuery = useQuery(() => ({
     ...loadProjectsQuery(serverSDK.scope, serverSDK.api.project),
@@ -152,6 +156,8 @@ function createServerSyncContextInner(serverSDK: ServerSDK, data: Data) {
     connection.handleEvent({ type: event.type })
 
     if (event.type === "project.updated") applyProjectUpdate(event.data)
+
+    if (event.type === "project.removed") applyProjectRemoved(event.data.id)
 
     if (event.type === "worktree.updated") {
       void worktrees.list(event.data.projectID)
@@ -167,6 +173,7 @@ function createServerSyncContextInner(serverSDK: ServerSDK, data: Data) {
 
   const projectApi = {
     update: applyProjectUpdate,
+    remove: applyProjectRemoved,
     ready: () => projectsQuery.isSuccess,
     refresh: refreshProjects,
     meta(directory: string, patch: ProjectMeta) {

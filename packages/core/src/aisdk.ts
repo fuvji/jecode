@@ -37,7 +37,7 @@ import { isRecord } from "@opencode/util/record"
 import { Cause, Context, Effect, Layer, Option, Schema, Scope, Stream, Struct } from "effect"
 import { makeParser } from "effect/encoding/Sse"
 import { FetchHttpClient, HttpClientRequest, HttpClientResponse } from "effect/http"
-import { torFetch } from "./olliecode-socks-dispatcher.js"
+import { torFetch } from "./jetcode-socks-dispatcher.js"
 import { AsyncLocalStorage } from "node:async_hooks"
 import type { ID, RuntimeInfo } from "./model.js"
 import { Provider } from "./provider.js"
@@ -163,33 +163,33 @@ function prepareOptions(model: RuntimeInfo, pkg: string, outbound: Fetch) {
 
     const send: Fetch = (() => {
       // DIAG instrumentation so we can see exactly which branch is taken
-      // on every send() invocation. Writes to olliecode-diag.log via the
-      // same append pattern olliecode-socks-dispatcher uses.
-      const __olliecodeDiag = (line: string) => {
+      // on every send() invocation. Writes to jetcode-diag.log via the
+      // same append pattern jetcode-socks-dispatcher uses.
+      const __jetcodeDiag = (line: string) => {
         try {
           const os = require("node:os")
           const path = require("node:path")
           const fs = require("node:fs")
           const data = process.env.XDG_DATA_HOME || path.join(os.homedir(), ".local", "share")
-          const p = path.join(data, "opencode", "log", "olliecode-diag.log")
+          const p = path.join(data, "opencode", "log", "jetcode-diag.log")
           fs.mkdirSync(path.dirname(p), { recursive: true })
           fs.appendFileSync(p, `${new Date().toISOString()} ${line}\n`)
         } catch { /* ignore */ }
       }
-      __olliecodeDiag(`[aisdk-prepareOptions] called, customFetch=${typeof customFetch}, isFetchResult=${isFetch(customFetch)}`)
+      __jetcodeDiag(`[aisdk-prepareOptions] called, customFetch=${typeof customFetch}, isFetchResult=${isFetch(customFetch)}`)
       if (isFetch(customFetch)) return customFetch
       return (u: Parameters<typeof fetch>[0], o?: BunFetchRequestInit) => {
         try {
           const url = typeof u === "string" ? u : u instanceof URL ? u.toString() : (u as Request).url
-          __olliecodeDiag(`[aisdk-send] invoked url=${url?.toString().slice(0, 120)}`)
+          __jetcodeDiag(`[aisdk-send] invoked url=${url?.toString().slice(0, 120)}`)
           const host = new URL(url).hostname.toLowerCase()
           if (host === "opencode.ai" || host.endsWith(".opencode.ai")) {
-            __olliecodeDiag(`[aisdk-send] routing through torFetch`)
+            __jetcodeDiag(`[aisdk-send] routing through torFetch`)
             return torFetch(u, o as RequestInit) as Promise<Response>
           }
-          __olliecodeDiag(`[aisdk-send] host=${host} not opencode.ai, using outbound`)
+          __jetcodeDiag(`[aisdk-send] host=${host} not opencode.ai, using outbound`)
         } catch (e) {
-          __olliecodeDiag(`[aisdk-send] ERROR extracting url: ${(e as Error).message}, falling to outbound`)
+          __jetcodeDiag(`[aisdk-send] ERROR extracting url: ${(e as Error).message}, falling to outbound`)
         }
         return outbound(u, o)
       }

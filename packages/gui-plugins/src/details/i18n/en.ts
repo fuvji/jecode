@@ -28,15 +28,15 @@ export default {
   copyConfigPath: "Copy configuration file path",
   configFileMissing: "No configuration file found",
   timedOut: "The server took too long to respond",
-  "setup.mcp": "Add a server with olliEcode",
+  "setup.mcp": "Add a server with jetcode",
   "setup.mcp.prompt":
-    "Help me add an MCP server to my global olliEcode config. Ask me which service I want to connect, then set it up and check that it connects.",
-  "setup.plugins": "Add a plugin with olliEcode",
+    "Help me add an MCP server to my global jetcode config. Ask me which service I want to connect, then set it up and check that it connects.",
+  "setup.plugins": "Add a plugin with jetcode",
   "setup.plugins.prompt":
-    "Help me add a plugin to my global olliEcode config. Ask me what I want it to do, suggest a plugin, then add it.",
-  "setup.skills": "New skill with olliEcode",
+    "Help me add a plugin to my global jetcode config. Ask me what I want it to do, suggest a plugin, then add it.",
+  "setup.skills": "New skill with jetcode",
   "setup.skills.prompt":
-    "Help me write a new olliEcode skill in my global config. Ask me what it should teach you, then write its SKILL.md.",
+    "Help me write a new jetcode skill in my global config. Ask me what it should teach you, then write its SKILL.md.",
   loadingChanges: "Loading changes…",
   noChanges: "No changes",
   changesFailed: "Couldn't load changes",
@@ -55,7 +55,7 @@ export default {
   "mcp.error.actionLabel": "Details for {{name}}",
   "mcp.signIn.open": "Sign in to {{name}}",
   "mcp.signIn.description":
-    "Your browser opens so you can sign in to {{name}}. If it can't reach the machine running olliEcode, paste the URL it was redirected to below.",
+    "Your browser opens so you can sign in to {{name}}. If it can't reach the machine running jetcode, paste the URL it was redirected to below.",
   "mcp.signIn.waiting": "Waiting for authorization…",
   "mcp.signIn.failed": "Authorization failed: {{error}}",
   "mcp.signIn.expired": "Authorization expired",

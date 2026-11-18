@@ -1852,6 +1852,15 @@ export type ProjectUpdated = {
   }
 }
 
+export type ProjectRemoved = {
+  id: EventID
+  created: number
+  metadata?: { [x: string]: any }
+  type: "project.removed"
+  location?: LocationRef
+  data: { id: ProjectID }
+}
+
 export type WorktreeUpdated = {
   id: EventID
   created: number
@@ -2472,7 +2481,12 @@ export type ConfigEntry =
                 }
           }
         }
-        compaction?: { auto?: boolean; keep?: { tokens?: number }; buffer?: ConfigCompactionPercent | number }
+        compaction?: {
+          auto?: boolean
+          token_saver?: boolean
+          keep?: { tokens?: number }
+          buffer?: ConfigCompactionPercent | number
+        }
         skills?: Array<string>
         commands?: {
           [x: string]: {
@@ -2908,6 +2922,7 @@ export type V2Event =
   | PermissionReplied
   | PluginUpdated
   | ProjectUpdated
+  | ProjectRemoved
   | WorktreeUpdated
   | WorktreeResolved
   | CommandUpdated
@@ -3295,6 +3310,10 @@ export type PluginGuiInput = {
 }
 
 export type PluginGuiOutput = { location: LocationPublicRef; data: PluginGuiBundle }
+
+export type PluginInstallInput = { readonly package: string }
+
+export type PluginInstallOutput = void
 
 export type PluginCheckInput = {
   readonly location?: { readonly directory?: string | undefined } | undefined
@@ -4221,6 +4240,10 @@ export type ProjectUpdateInput = {
 
 export type ProjectUpdateOutput = Project
 
+export type ProjectRemoveInput = { readonly projectID: string }
+
+export type ProjectRemoveOutput = void
+
 export type FormListInput = { readonly location?: { readonly directory?: string | undefined } | undefined }
 
 export type FormListOutput = { location: LocationPublicRef; data: Array<FormInfo> }
@@ -4328,6 +4351,10 @@ export type SkillListInput = { readonly location?: { readonly directory?: string
 
 export type SkillListOutput = { location: LocationPublicRef; data: Array<SkillInfo> }
 
+export type SkillInstallInput = { readonly url: string; readonly name?: string | undefined }
+
+export type SkillInstallOutput = { name: string }
+
 export type RpcCallInput = {
   readonly rpcID: string
   readonly method: string
@@ -4405,6 +4432,7 @@ export type EventSubscribeInput = {
         | "permission.replied"
         | "plugin.updated"
         | "project.updated"
+        | "project.removed"
         | "worktree.updated"
         | "worktree.resolved"
         | "command.updated"
@@ -4858,7 +4886,12 @@ export type ConfigGetOutput = Array<ConfigEntry>
 
 export type ConfigShellsOutput = Array<ConfigShellOption>
 
-export type ExperimentalConfigUpdateInput = { readonly shell: string | null }
+export type ExperimentalConfigUpdateInput = {
+  readonly shell?: string | null | undefined
+  readonly plugins?:
+    | ReadonlyArray<string | { readonly package: string; readonly options?: { readonly [x: string]: JsonValue } }>
+    | undefined
+}
 
 export type ExperimentalConfigUpdateOutput = void
 

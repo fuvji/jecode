@@ -19,6 +19,8 @@ export function ProjectMenuItems(props: {
   onRevealProject: (server: ServerConnection.Any, project: LocalProject) => void
   onClearNotifications: (server: ServerConnection.Any, project: LocalProject) => void
   onHideProject: (server: ServerConnection.Any, project: LocalProject) => void
+  canEraseProject: (project: LocalProject) => boolean
+  onEraseProject: (server: ServerConnection.Any, project: LocalProject) => void
 }) {
   const language = useLanguage()
 
@@ -51,6 +53,11 @@ export function ProjectMenuItems(props: {
         {language.t("sidebar.project.clearNotifications")}
       </Menu.Item>
       <Menu.Separator />
+      <Show when={props.canEraseProject(props.project)}>
+        <Menu.Item onSelect={() => props.onEraseProject(props.server, props.project)}>
+          {language.t("home.project.erase")}
+        </Menu.Item>
+      </Show>
       <Menu.Item onSelect={() => props.onHideProject(props.server, props.project)}>
         {language.t("common.close")}
       </Menu.Item>

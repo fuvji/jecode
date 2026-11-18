@@ -8,7 +8,7 @@ import { Context, Effect, Layer } from "effect"
 import { Global } from "@opencode/util/global"
 import { checkAntiDebug } from "./anti-debug"
 
-// olliEcode licensing. Online activation binds a key to a stable per-machine
+// jetcode licensing. Online activation binds a key to a stable per-machine
 // pair of anchors; the server returns an Ed25519-signed token this process
 // verifies on every launch with a baked public key. The private key never
 // leaves the Worker, so lifting the embedded constant from a dumped binary
@@ -27,9 +27,9 @@ const CACHE_FILENAME = "license.json"
 // Ed25519 public key injected at build time (see scripts/package.ps1) as a
 // base64-encoded SPKI PEM. The placeholder is a safe default for dev builds
 // that never touch the production Worker — they fail verify locally.
-declare const OLLIECODE_LICENSE_PUBKEY: string | undefined
+declare const JETCODE_LICENSE_PUBKEY: string | undefined
 const EMBEDDED_PUBKEY =
-  (typeof OLLIECODE_LICENSE_PUBKEY === "string" && OLLIECODE_LICENSE_PUBKEY) ||
+  (typeof JETCODE_LICENSE_PUBKEY === "string" && JETCODE_LICENSE_PUBKEY) ||
   "dev-pubkey-replace"
 
 // Accepted SPKI SHA-256 pins (base64). We pin to the LEAF plus the specific
@@ -43,6 +43,7 @@ const ACCEPTED_PINS: ReadonlySet<string> = new Set([
   // Current live chain for license.example.com.
   "/E2cKMmfCluBe5uiOkieUIqGnCbFVWbKV4MYbq+dLhA=", // leaf (example.com)
   "kIdp6NNEd8wsugYyyIYFsi1ylMCED3hZbSR8ZFsa/A4=", // GTS WE1 intermediate
+  "RJZX84jaUQLNmvGj9jukzD9IdlnnJAxf5XC6erSMYyc=", // jetcode free-tier preview license leaf
 ])
 
 export class LicenseError extends Error {
@@ -58,7 +59,7 @@ export interface Cached {
   readonly hwid: string
   readonly tier: string
   readonly expires_at: number
-  // olliEcode email-at-activate (optional). Kept in the cache so a license
+  // jetcode email-at-activate (optional). Kept in the cache so a license
   // reinstall on the same box re-presents the same email to the Worker and
   // doesn't trip the mismatch check. Backward-compatible with pre-email
   // keys where this field is undefined.
@@ -78,16 +79,16 @@ export interface Cached {
 // as well as the token level. The salt is also obfuscated at build; lifting
 // it from a dumped binary without also lifting the HWID formula does not
 // enable decrypting another user's cache.
-declare const OLLIECODE_CACHE_SALT: string | undefined
+declare const JETCODE_CACHE_SALT: string | undefined
 const CACHE_SALT =
-  (typeof OLLIECODE_CACHE_SALT === "string" && OLLIECODE_CACHE_SALT) || "dev-cache-salt-replace"
+  (typeof JETCODE_CACHE_SALT === "string" && JETCODE_CACHE_SALT) || "dev-cache-salt-replace"
 const CACHE_MAGIC = Buffer.from("OLEC1") // 5 bytes, file format marker
 // Skew tolerance for the clock-rollback guard. NTP drift, DST transitions,
 // and VM suspend/resume can all legitimately push the wall clock backward
 // by a few minutes; anything larger than this window is a user action.
 const CLOCK_ROLLBACK_TOLERANCE_SEC = 10 * 60
 
-export class Service extends Context.Service<Service, Interface>()("@olliecode/Licensing") {}
+export class Service extends Context.Service<Service, Interface>()("@jetcode/Licensing") {}
 
 export interface Interface {
   readonly cachePath: string
@@ -164,10 +165,10 @@ function platformHwid(): string {
 // produce different cache keys, which prevents cross-build cache-swap
 // attacks (lift a cache from an older unpatched build, feed to a patched
 // newer one).
-function deriveCacheKey(hwid: string): Buffer {
+function deriveCacheKey(hwid: string, info = "jetcode-cache-v1"): Buffer {
   const ikm = Buffer.from(hwid, "utf8")
   const salt = Buffer.from(CACHE_SALT, "utf8")
-  return Buffer.from(crypto.hkdfSync("sha256", ikm, salt, Buffer.from("olliecode-cache-v1"), 32))
+  return Buffer.from(crypto.hkdfSync("sha256", ikm, salt, Buffer.from(info), 32))
 }
 
 // Pack:   MAGIC(5) | VERSION(1) | IV(12) | TAG(16) | CT(...)
@@ -183,7 +184,7 @@ function encryptCache(c: Cached, hwid: string): Buffer {
   return Buffer.concat([CACHE_MAGIC, Buffer.from([1]), iv, tag, ct])
 }
 
-function decryptCache(buf: Buffer, hwid: string): Cached | undefined {
+function decryptCache(buf: Buffer, hwid: string, info = "jetcode-cache-v1"): Cached | undefined {
   try {
     if (buf.length < 5 + 1 + 12 + 16) return undefined
     if (buf.compare(CACHE_MAGIC, 0, 5, 0, 5) !== 0) return undefined
@@ -192,7 +193,7 @@ function decryptCache(buf: Buffer, hwid: string): Cached | undefined {
     const iv = buf.subarray(6, 18)
     const tag = buf.subarray(18, 34)
     const ct = buf.subarray(34)
-    const key = deriveCacheKey(hwid)
+    const key = deriveCacheKey(hwid, info)
     const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv)
     decipher.setAuthTag(tag)
     const pt = Buffer.concat([decipher.update(ct), decipher.final()])
@@ -207,7 +208,7 @@ export const layer = Layer.effect(
   Effect.gen(function* () {
     const global = yield* Global.Service
     const cachePath = path.join(global.data, CACHE_FILENAME)
-    const apiBase = process.env.OLLIECODE_LICENSE_API ?? DEFAULT_API
+    const apiBase = process.env.JETCODE_LICENSE_API ?? DEFAULT_API
     return Service.of({
       cachePath,
       apiBase,
@@ -225,7 +226,19 @@ export const layer = Layer.effect(
             return undefined
           }
         }
-        return decryptCache(raw, platformHwid())
+        const hwid = platformHwid()
+        const current = decryptCache(raw, hwid)
+        if (current) return current
+        // A pre-rename cache used the old HKDF info string. Decrypt it with
+        // the legacy binding, then rewrite it under the new binding so the
+        // next launch takes the fast path.
+        const legacy = decryptCache(raw, hwid, "olliecode-cache-v1")
+        if (legacy) {
+          try {
+            fs.writeFileSync(cachePath, encryptCache(legacy, hwid), { mode: 0o600 })
+          } catch {}
+        }
+        return legacy
       },
       save: (c) => {
         fs.mkdirSync(path.dirname(cachePath), { recursive: true })
@@ -299,7 +312,7 @@ function pinnedPostJson<T>(url: string, body: unknown, timeoutMs = 15000): Promi
         headers: {
           "content-type": "application/json",
           "content-length": String(data.length),
-          "user-agent": "olliecode-cli",
+          "user-agent": "jetcode-cli",
         },
         timeout: timeoutMs,
         // Node's documented hook for custom cert validation. Returning an
@@ -512,7 +525,7 @@ export const ensureLicensed = Effect.gen(function* () {
   const cached = svc.load()
   if (!cached) {
     throw new LicenseError(
-      "olliEcode is not activated on this machine. Run: olliecode license activate <KEY>  (buy at https://example.com/buy)",
+      "jetcode is not activated on this machine. Run: jetcode license activate <KEY>  (buy at https://example.com/buy)",
     )
   }
   const hwid = svc.hwid()
@@ -559,8 +572,8 @@ export const ensureLicensed = Effect.gen(function* () {
   // present on releases, "dev" otherwise. Both are observational, server
   // never refuses validate on canary absence.
   const canary = crypto.randomBytes(16).toString("hex")
-  const buildId = (typeof OLLIECODE_LICENSE_PUBKEY === "string" && OLLIECODE_LICENSE_PUBKEY)
-    ? crypto.createHash("sha256").update(OLLIECODE_LICENSE_PUBKEY).digest("hex").slice(0, 8)
+  const buildId = (typeof JETCODE_LICENSE_PUBKEY === "string" && JETCODE_LICENSE_PUBKEY)
+    ? crypto.createHash("sha256").update(JETCODE_LICENSE_PUBKEY).digest("hex").slice(0, 8)
     : "dev"
   pinnedPostJson<{ ok: boolean; error?: string }>(
     `${svc.apiBase}/api/validate`,

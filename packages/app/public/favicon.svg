@@ -1,1 +1,13 @@
-../../ui/src/assets/favicon/favicon.svg
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="jetcode">
+  <defs>
+    <linearGradient id="j" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#22D3EE"/>
+      <stop offset=".42" stop-color="#4F8CFF"/>
+      <stop offset=".72" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#D946EF"/>
+    </linearGradient>
+  </defs>
+  <path d="M300 300H690C735 300 760 330 760 378V600C760 738 668 812 540 812C442 812 366 756 334 672" fill="none" stroke="url(#j)" stroke-width="148" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M330 260C430 250 640 248 742 266" fill="none" stroke="#fff" stroke-opacity=".59" stroke-width="18" stroke-linecap="round"/>
+  <path d="M828 150L845 195L890 212L845 229L828 274L811 229L766 212L811 195Z" fill="url(#j)" stroke="#fff" stroke-opacity=".43" stroke-width="10" stroke-linejoin="round"/>
+</svg>
